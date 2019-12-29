@@ -37,13 +37,7 @@ Abstract:
 
 #include "driver.h"
 
-NTSTATUS
-DriverEntry(
-	IN PDRIVER_OBJECT  DriverObject,
-	IN PUNICODE_STRING RegistryPath
-)
-/*++
-
+/*
 Routine Description:
 	DriverEntry initializes the driver and is the first routine called by the
 	system after the driver is loaded. DriverEntry specifies the other entry
@@ -65,8 +59,11 @@ Return Value:
 
 	STATUS_SUCCESS if successful,
 	STATUS_UNSUCCESSFUL otherwise.
-
---*/
+*/
+NTSTATUS DriverEntry(
+	IN PDRIVER_OBJECT  DriverObject,
+	IN PUNICODE_STRING RegistryPath
+)
 {
 	KdPrint(("DriverEntry\n"));
 
@@ -95,12 +92,7 @@ Return Value:
 	return status;
 }
 
-NTSTATUS
-EchoEvtDeviceAdd(
-	IN WDFDRIVER       Driver,
-	IN PWDFDEVICE_INIT DeviceInit
-)
-/*++
+/*
 Routine Description:
 
 	EvtDeviceAdd is called by the framework in response to AddDevice
@@ -116,8 +108,11 @@ Arguments:
 Return Value:
 
 	NTSTATUS
-
---*/
+*/
+NTSTATUS EchoEvtDeviceAdd(
+	IN WDFDRIVER       Driver,
+	IN PWDFDEVICE_INIT DeviceInit
+)
 {
 	KdPrint(("EchoEvtDeviceAdd\n"));
 
@@ -131,8 +126,7 @@ Return Value:
 	return status;
 }
 
-NTSTATUS EchoPrintDriverVersion( )
-/*++
+/*
 Routine Description:
 
    This routine shows how to retrieve framework version string and
@@ -144,8 +138,8 @@ Arguments:
 Return Value:
 
 	NTSTATUS
-
---*/
+*/
+NTSTATUS EchoPrintDriverVersion( )
 {
 	KdPrint(("EchoPrintDriverVersion\n"));
 

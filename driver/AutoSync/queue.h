@@ -39,10 +39,7 @@ typedef struct _QUEUE_CONTEXT {
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(QUEUE_CONTEXT, QueueGetContext)
 
-NTSTATUS
-EchoQueueInitialize(
-    WDFDEVICE hDevice
-    );
+NTSTATUS EchoQueueInitialize(WDFDEVICE hDevice);
 
 EVT_WDF_IO_QUEUE_CONTEXT_DESTROY_CALLBACK EchoEvtIoQueueContextDestroy;
 
@@ -53,10 +50,6 @@ EVT_WDF_REQUEST_CANCEL EchoEvtRequestCancel;
 EVT_WDF_IO_QUEUE_IO_READ EchoEvtIoRead;
 EVT_WDF_IO_QUEUE_IO_WRITE EchoEvtIoWrite;
 
-NTSTATUS
-EchoTimerCreate(
-    IN WDFTIMER*       pTimer,
-    IN WDFQUEUE        Queue
-    );
+NTSTATUS EchoTimerCreate(IN WDFTIMER* pTimer, IN WDFQUEUE Queue);
 
 EVT_WDF_TIMER EchoEvtTimerFunc;

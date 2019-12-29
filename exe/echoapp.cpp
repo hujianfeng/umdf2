@@ -44,30 +44,21 @@ ULONG G_AsyncIoLoopsNum;
 WCHAR G_DevicePath[MAX_DEVPATH_LENGTH];
 
 
-ULONG
-AsyncIo(
-    PVOID   ThreadParameter
-    );
+ULONG AsyncIo(PVOID   ThreadParameter);
 
-BOOLEAN
-PerformWriteReadTest(
+BOOLEAN PerformWriteReadTest(
     IN HANDLE hDevice,
     IN ULONG TestLength
     );
 
-BOOL
-GetDevicePath(
+BOOL GetDevicePath(
     IN  LPGUID InterfaceGuid,
     _Out_writes_(BufLen) PWCHAR DevicePath,
     _In_ size_t BufLen
     );
 
 
-int __cdecl
-main(
-    _In_ int argc,
-    _In_reads_(argc) char* argv[]
-    )
+int __cdecl main(_In_ int argc, _In_reads_(argc) char* argv[])
 {
     OutputDebugStringA("main\n");
 
@@ -182,10 +173,7 @@ exit:
 
 }
 
-PUCHAR
-CreatePatternBuffer(
-    IN ULONG Length
-    )
+PUCHAR CreatePatternBuffer(IN ULONG Length)
 {
     unsigned int i;
     PUCHAR p, pBuf;
@@ -206,11 +194,9 @@ CreatePatternBuffer(
     return pBuf;
 }
 
-BOOLEAN
-VerifyPatternBuffer(
-    _In_reads_bytes_(Length) PUCHAR pBuffer,
-    _In_ ULONG Length
-    )
+BOOLEAN VerifyPatternBuffer(
+	_In_reads_bytes_(Length) PUCHAR pBuffer,
+	_In_ ULONG Length)
 {
     OutputDebugStringA("VerifyPatternBuffer\n");
 
@@ -231,8 +217,7 @@ VerifyPatternBuffer(
     return TRUE;
 }
 
-BOOLEAN
-PerformWriteReadTest(
+BOOLEAN PerformWriteReadTest(
     IN HANDLE hDevice,
     IN ULONG TestLength
     )

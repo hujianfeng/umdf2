@@ -1,5 +1,4 @@
-/*++
-
+/*
 Copyright (c) 1990-2000  Microsoft Corporation
 
 Module Name:
@@ -10,41 +9,38 @@ Abstract:
 
     This is a C version of a very simple sample driver that illustrates
     how to use the driver framework and demonstrates best practices.
-
---*/
+*/
 
 #include "driver.h"
 
-NTSTATUS EchoQueueInitialize(WDFDEVICE Device)
-/*++
-
+/*
 Routine Description:
 
 
-     The I/O dispatch callbacks for the frameworks device object
-     are configured in this function.
+	 The I/O dispatch callbacks for the frameworks device object
+	 are configured in this function.
 
-     A single default I/O Queue is configured for serial request
-     processing, and a driver context memory allocation is created
-     to hold our structure QUEUE_CONTEXT.
+	 A single default I/O Queue is configured for serial request
+	 processing, and a driver context memory allocation is created
+	 to hold our structure QUEUE_CONTEXT.
 
-     This memory may be used by the driver automatically synchronized
-     by the Queue's presentation lock.
+	 This memory may be used by the driver automatically synchronized
+	 by the Queue's presentation lock.
 
-     The lifetime of this memory is tied to the lifetime of the I/O
-     Queue object, and we register an optional destructor callback
-     to release any private allocations, and/or resources.
+	 The lifetime of this memory is tied to the lifetime of the I/O
+	 Queue object, and we register an optional destructor callback
+	 to release any private allocations, and/or resources.
 
 
 Arguments:
 
-    Device - Handle to a framework device object.
+	Device - Handle to a framework device object.
 
 Return Value:
 
-    NTSTATUS
-
---*/
+	NTSTATUS
+*/
+NTSTATUS EchoQueueInitialize(WDFDEVICE Device)
 {
     KdPrint(("EchoQueueInitialize\n"));
 
@@ -116,29 +112,26 @@ Return Value:
     return status;
 }
 
-
-NTSTATUS EchoTimerCreate(
-    IN WDFTIMER*       Timer,
-    IN WDFQUEUE        Queue
-    )
-/*++
-
+/*
 Routine Description:
 
-    Subroutine to create timer. By associating the timerobject with
-    the queue, we are basically telling the framework to serialize the queue
-    callbacks with the timer callback. By doing so, we don't have to worry
-    about protecting queue-context structure from multiple threads accessing
-    it simultaneously.
+	Subroutine to create timer. By associating the timerobject with
+	the queue, we are basically telling the framework to serialize the queue
+	callbacks with the timer callback. By doing so, we don't have to worry
+	about protecting queue-context structure from multiple threads accessing
+	it simultaneously.
 
 Arguments:
 
 
 Return Value:
 
-    NTSTATUS
-
---*/
+	NTSTATUS
+*/
+NTSTATUS EchoTimerCreate(
+    IN WDFTIMER*       Timer,
+    IN WDFQUEUE        Queue
+    )
 {
     KdPrint(("EchoTimerCreate\n"));
 
@@ -167,27 +160,21 @@ Return Value:
     return Status;
 }
 
-
-
-VOID EchoEvtIoQueueContextDestroy(
-    WDFOBJECT Object
-)
-/*++
-
+/*
 Routine Description:
 
-    This is called when the Queue that our driver context memory
-    is associated with is destroyed.
+	This is called when the Queue that our driver context memory
+	is associated with is destroyed.
 
 Arguments:
 
-    Context - Context that's being freed.
+	Context - Context that's being freed.
 
 Return Value:
 
-    VOID
-
---*/
+	VOID
+*/
+VOID EchoEvtIoQueueContextDestroy(WDFOBJECT Object)
 {
     KdPrint(("EchoEvtIoQueueContextDestroy\n"));
 
@@ -211,29 +198,24 @@ Return Value:
     return;
 }
 
-
-VOID EchoEvtRequestCancel(
-    IN WDFREQUEST Request
-    )
-/*++
-
+/*
 Routine Description:
 
 
-    Called when an I/O request is cancelled after the driver has marked
-    the request cancellable. This callback is automatically synchronized
-    with the I/O callbacks since we have chosen to use frameworks Device
-    level locking.
+	Called when an I/O request is cancelled after the driver has marked
+	the request cancellable. This callback is automatically synchronized
+	with the I/O callbacks since we have chosen to use frameworks Device
+	level locking.
 
 Arguments:
 
-    Request - Request being cancelled.
+	Request - Request being cancelled.
 
 Return Value:
 
-    VOID
-
---*/
+	VOID
+*/
+VOID EchoEvtRequestCancel(IN WDFREQUEST Request)
 {
     KdPrint(("EchoEvtRequestCancel\n"));
 
@@ -260,37 +242,35 @@ Return Value:
     return;
 }
 
+/*
+Routine Description:
+
+	This event is called when the framework receives IRP_MJ_READ request.
+	It will copy the content from the queue-context buffer to the request buffer.
+	If the driver hasn't received any write request earlier, the read returns zero.
+
+Arguments:
+
+	Queue -  Handle to the framework queue object that is associated with the
+			 I/O request.
+
+	Request - Handle to a framework request object.
+
+	Length  - number of bytes to be read.
+			  The default property of the queue is to not dispatch
+			  zero lenght read & write requests to the driver and
+			  complete is with status success. So we will never get
+			  a zero length request.
+
+Return Value:
+
+	VOID
+*/
 VOID EchoEvtIoRead(
     IN WDFQUEUE   Queue,
     IN WDFREQUEST Request,
     IN size_t      Length
     )
-/*++
-
-Routine Description:
-
-    This event is called when the framework receives IRP_MJ_READ request.
-    It will copy the content from the queue-context buffer to the request buffer.
-    If the driver hasn't received any write request earlier, the read returns zero.
-
-Arguments:
-
-    Queue -  Handle to the framework queue object that is associated with the
-             I/O request.
-
-    Request - Handle to a framework request object.
-
-    Length  - number of bytes to be read.
-              The default property of the queue is to not dispatch
-              zero lenght read & write requests to the driver and
-              complete is with status success. So we will never get
-              a zero length request.
-
-Return Value:
-
-    VOID
-
---*/
 {
     KdPrint(("EchoEvtIoRead\n"));
 
@@ -357,39 +337,37 @@ Return Value:
     return;
 }
 
+/*
+Routine Description:
+
+	This event is invoked when the framework receives IRP_MJ_WRITE request.
+	This routine allocates memory buffer, copies the data from the request to it,
+	and stores the buffer pointer in the queue-context with the length variable
+	representing the buffers length. The actual completion of the request
+	is defered to the periodic timer dpc.
+
+Arguments:
+
+	Queue -  Handle to the framework queue object that is associated with the
+			 I/O request.
+
+	Request - Handle to a framework request object.
+
+	Length  - number of bytes to be read.
+			  The default property of the queue is to not dispatch
+			  zero lenght read & write requests to the driver and
+			  complete is with status success. So we will never get
+			  a zero length request.
+
+Return Value:
+
+	VOID
+*/
 VOID EchoEvtIoWrite(
     IN WDFQUEUE   Queue,
     IN WDFREQUEST Request,
     IN size_t     Length
     )
-/*++
-
-Routine Description:
-
-    This event is invoked when the framework receives IRP_MJ_WRITE request.
-    This routine allocates memory buffer, copies the data from the request to it,
-    and stores the buffer pointer in the queue-context with the length variable
-    representing the buffers length. The actual completion of the request
-    is defered to the periodic timer dpc.
-
-Arguments:
-
-    Queue -  Handle to the framework queue object that is associated with the
-             I/O request.
-
-    Request - Handle to a framework request object.
-
-    Length  - number of bytes to be read.
-              The default property of the queue is to not dispatch
-              zero lenght read & write requests to the driver and
-              complete is with status success. So we will never get
-              a zero length request.
-
-Return Value:
-
-    VOID
-
---*/
 {
     KdPrint(("EchoEvtIoWrite\n"));
 
@@ -470,28 +448,23 @@ Return Value:
     return;
 }
 
-
-VOID EchoEvtTimerFunc(
-    IN WDFTIMER     Timer
-    )
-/*++
-
+/*
 Routine Description:
 
-    This is the TimerDPC the driver sets up to complete requests.
-    This function is registered when the WDFTIMER object is created, and
-    will automatically synchronize with the I/O Queue callbacks
-    and cancel routine.
+	This is the TimerDPC the driver sets up to complete requests.
+	This function is registered when the WDFTIMER object is created, and
+	will automatically synchronize with the I/O Queue callbacks
+	and cancel routine.
 
 Arguments:
 
-    Timer - Handle to a framework Timer object.
+	Timer - Handle to a framework Timer object.
 
 Return Value:
 
-    VOID
-
---*/
+	VOID
+*/
+VOID EchoEvtTimerFunc(IN WDFTIMER     Timer)
 {
     KdPrint(("EchoEvtTimerFunc\n"));
 
@@ -541,5 +514,4 @@ Return Value:
 
     return;
 }
-
 

@@ -39,7 +39,5 @@ Abstract:
 DRIVER_INITIALIZE DriverEntry;
 EVT_WDF_DRIVER_DEVICE_ADD EchoEvtDeviceAdd;
 
-NTSTATUS
-EchoPrintDriverVersion(
-    );
+NTSTATUS EchoPrintDriverVersion();
 

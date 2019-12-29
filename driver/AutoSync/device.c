@@ -15,22 +15,22 @@ Abstract:
 
 #include "driver.h"
 
-NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
 /*
 Routine Description:
 
-    Worker routine called to create a device and its software resources.
+	Worker routine called to create a device and its software resources.
 
 Arguments:
 
-    DeviceInit - Pointer to an opaque init structure. Memory for this
-                    structure will be freed by the framework when the WdfDeviceCreate
-                    succeeds. So don't access the structure after that point.
+	DeviceInit - Pointer to an opaque init structure. Memory for this
+					structure will be freed by the framework when the WdfDeviceCreate
+					succeeds. So don't access the structure after that point.
 
 Return Value:
 
-    NTSTATUS
+	NTSTATUS
 */
+NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
 {
     KdPrint(("EchoDeviceCreate\n"));
 
@@ -97,28 +97,27 @@ Return Value:
     return status;
 }
 
-
-NTSTATUS EchoEvtDeviceSelfManagedIoStart(IN  WDFDEVICE Device)
 /*
 Routine Description:
 
-    This event is called by the Framework when the device is started
-    or restarted after a suspend operation.
+	This event is called by the Framework when the device is started
+	or restarted after a suspend operation.
 
-    This function is not marked pageable because this function is in the
-    device power up path. When a function is marked pagable and the code
-    section is paged out, it will generate a page fault which could impact
-    the fast resume behavior because the client driver will have to wait
-    until the system drivers can service this page fault.
+	This function is not marked pageable because this function is in the
+	device power up path. When a function is marked pagable and the code
+	section is paged out, it will generate a page fault which could impact
+	the fast resume behavior because the client driver will have to wait
+	until the system drivers can service this page fault.
 
 Arguments:
 
-    Device - Handle to a framework device object.
+	Device - Handle to a framework device object.
 
 Return Value:
 
-    NTSTATUS - Failures will result in the device stack being torn down.
+	NTSTATUS - Failures will result in the device stack being torn down.
 */
+NTSTATUS EchoEvtDeviceSelfManagedIoStart(IN  WDFDEVICE Device)
 {
     KdPrint(("EchoEvtDeviceSelfManagedIoStart\n"));
 
@@ -140,24 +139,24 @@ Return Value:
     return STATUS_SUCCESS;
 }
 
-NTSTATUS EchoEvtDeviceSelfManagedIoSuspend(IN  WDFDEVICE Device)
 /*
 Routine Description:
 
-    This event is called by the Framework when the device is stopped
-    for resource rebalance or suspended when the system is entering
-    Sx state.
+	This event is called by the Framework when the device is stopped
+	for resource rebalance or suspended when the system is entering
+	Sx state.
 
 
 Arguments:
 
-    Device - Handle to a framework device object.
+	Device - Handle to a framework device object.
 
 Return Value:
 
-    NTSTATUS - The driver is not allowed to fail this function.  If it does, the
-    device stack will be torn down.
+	NTSTATUS - The driver is not allowed to fail this function.  If it does, the
+	device stack will be torn down.
 */
+NTSTATUS EchoEvtDeviceSelfManagedIoSuspend(IN  WDFDEVICE Device)
 {
     KdPrint(("EchoEvtDeviceSelfManagedIoSuspend\n"));
 
