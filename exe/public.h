@@ -9,11 +9,12 @@ Abstract:
 
     This module contains the common declarations shared by driver
     and user applications.
-
+    该模块包含驱动程序和用户应用程序共享的通用声明。
 
 Environment:
 
     user and kernel
+    用户与内核
 
 --*/
 
@@ -22,6 +23,7 @@ __pragma(warning(suppress:4127)) while(a)
 
 //
 // Define an Interface Guid so that app can find the device and talk to it.
+// 定义GUID，以便应用程序可以找到设备并与之对话。
 //
 
 DEFINE_GUID (GUID_DEVINTERFACE_ECHO,

@@ -1,4 +1,4 @@
-/*++
+/*
 
 Copyright (c) 1990-2000  Microsoft Corporation
 
@@ -48,6 +48,10 @@ Abstract:
 #include "driver.h"
 
 /*
+Function:
+	DriverEntry
+	驱动程序入口函数
+
 Routine Description:
 	DriverEntry initializes the driver and is the first routine called by the
 	system after the driver is loaded. DriverEntry specifies the other entry
@@ -69,7 +73,7 @@ Parameters Description:
 	RegistryPath - represents the driver specific path in the Registry.
 	The function driver can use the path to store driver related data between
 	reboots. The path does not store hardware instance specific data.
-	RegistryPath-代表注册表中特定于驱动程序的路径。 
+	RegistryPath - 代表注册表中特定于驱动程序的路径。 
 	功能驱动程序可以使用路径在重新启动之间存储与驱动程序相关的数据。 
 	该路径不存储特定于硬件实例的数据。
 
@@ -77,6 +81,7 @@ Return Value:
 
 	STATUS_SUCCESS if successful,
 	STATUS_UNSUCCESSFUL otherwise.
+
 */
 NTSTATUS DriverEntry(
 	IN PDRIVER_OBJECT  DriverObject,
@@ -88,12 +93,17 @@ NTSTATUS DriverEntry(
 	WDF_DRIVER_CONFIG config;
 	NTSTATUS status;
 
-	WDF_DRIVER_CONFIG_INIT(&config,
+	// 注册设备上电后的回调函数EchoEvtDeviceAdd。
+	WDF_DRIVER_CONFIG_INIT(
+		&config,
 		EchoEvtDeviceAdd
 	);
 
 	KdPrint(("WdfDriverCreate\n"));
-	status = WdfDriverCreate(DriverObject,
+
+	// 创建调用驱动程序框架的驱动程序对象
+	status = WdfDriverCreate(
+		DriverObject,
 		RegistryPath,
 		WDF_NO_OBJECT_ATTRIBUTES,
 		&config,
@@ -104,6 +114,7 @@ NTSTATUS DriverEntry(
 	}
 
 #if DBG
+	// 调试模式打印驱动程序版本
 	EchoPrintDriverVersion();
 #endif
 
@@ -111,13 +122,16 @@ NTSTATUS DriverEntry(
 }
 
 /*
+Function:
+	EchoEvtDeviceAdd
+	设备上电回调
+
 Routine Description:
 
 	EvtDeviceAdd is called by the framework in response to AddDevice
 	call from the PnP manager. We create and initialize a device object to
 	represent a new instance of the device.
-	框架调用EvtDeviceAdd来响应来自PnP管理器的AddDevice调用。
-	我们创建并初始化一个设备对象以表示该设备的新实例。
+	一当设备上电，PNP管理器就会发出对应IRP，KMDF收到该IRP后，就会调用EchoEvtDeviceAdd这个回调函数。
 
 Arguments:
 
@@ -143,17 +157,24 @@ NTSTATUS EchoEvtDeviceAdd(
 	UNREFERENCED_PARAMETER(Driver);
 
 	KdPrint(("EchoDeviceCreate\n"));
+
+	// 回调函数主要调用了EchoDeviceCreate()
 	status = EchoDeviceCreate(DeviceInit);
 
 	return status;
 }
 
 /*
+Function:
+	EchoPrintDriverVersion
+	打印驱动版本
+
 Routine Description:
 
    This routine shows how to retrieve framework version string and
    also how to find out to which version of framework library the
    client driver is bound to.
+   此例程显示如何检索框架版本字符串，以及如何找出客户端驱动程序绑定到哪个版本的框架库。
 
 Arguments:
 
@@ -172,6 +193,7 @@ NTSTATUS EchoPrintDriverVersion( )
 
 	//
 	// 1) Retreive version string and print that in the debugger.
+	//    检索版本字符串并在调试器中打印。
 	//
 	status = WdfStringCreate(NULL, WDF_NO_OBJECT_ATTRIBUTES, &string);
 	if (!NT_SUCCESS(status)) {
@@ -186,6 +208,8 @@ NTSTATUS EchoPrintDriverVersion( )
 		// by default it's parented to the driver and it will be
 		// deleted when the driverobject is deleted when the DriverEntry
 		// returns a failure status.
+		// 无需担心删除字符串对象，因为默认情况下该字符串对象是驱动程序的父对象，
+		// 并且当DriverEntry返回失败状态时删除该driverObject时，它将被删除。
 		//
 		KdPrint(("Error: WdfDriverRetrieveVersionString failed 0x%x\n", status));
 		return status;
@@ -196,9 +220,11 @@ NTSTATUS EchoPrintDriverVersion( )
 
 	WdfObjectDelete(string);
 	string = NULL; // To avoid referencing a deleted object.
+	               // 为了避免引用已删除的对象。
 
 	//
 	// 2) Find out to which version of framework this driver is bound to.
+	//    找出此驱动程序绑定到哪个版本的框架。
 	//
 	WDF_DRIVER_VERSION_AVAILABLE_PARAMS_INIT(&ver, 1, 0);
 	if (WdfDriverIsVersionAvailable(WdfGetDriver(), &ver) == TRUE) {

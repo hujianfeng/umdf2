@@ -5,7 +5,7 @@ Copyright (c) 1990-2000  Microsoft Corporation
 Module Name:
 
     device.c - Device handling events for example driver.
-	           设备处理事件，例如驱动程序。
+	           驱动程序示例的设备处理事件
 
 Abstract:
 
@@ -18,6 +18,10 @@ Abstract:
 #include "driver.h"
 
 /*
+Function:
+    EchoDeviceCreate
+    建立设备, 由EchoEvtDeviceAdd调用。
+
 Routine Description:
 
 	Worker routine called to create a device and its software resources.
@@ -39,18 +43,18 @@ NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
 {
     KdPrint(("EchoDeviceCreate\n"));
 
-    WDF_OBJECT_ATTRIBUTES   deviceAttributes;
+    WDF_OBJECT_ATTRIBUTES deviceAttributes;
     PDEVICE_CONTEXT deviceContext;
-    WDF_PNPPOWER_EVENT_CALLBACKS    pnpPowerCallbacks;
+    WDF_PNPPOWER_EVENT_CALLBACKS pnpPowerCallbacks;
     WDFDEVICE device;
     NTSTATUS status;
 
     WDF_PNPPOWER_EVENT_CALLBACKS_INIT(&pnpPowerCallbacks);
 
     //
-    // Register pnp/power callbacks so that we can start and stop the timer as the device
+    // Register PNP/POWER callbacks so that we can start and stop the timer as the device
     // gets started and stopped.
-	// 注册 pnp/power 回调，以便我们可以在设备启动和停止时启动和停止计时器。
+	// 注册 PNP/POWER 回调，以便我们可以在设备启动和停止时启动和停止计时器。
     //
     pnpPowerCallbacks.EvtDeviceSelfManagedIoInit    = EchoEvtDeviceSelfManagedIoStart;
     pnpPowerCallbacks.EvtDeviceSelfManagedIoSuspend = EchoEvtDeviceSelfManagedIoSuspend;
@@ -59,9 +63,9 @@ NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
     pnpPowerCallbacks.EvtDeviceSelfManagedIoRestart = EchoEvtDeviceSelfManagedIoStart;
 
     //
-    // Register the PnP and power callbacks. Power policy related callbacks will be registered
+    // Register the pnp and power callbacks. Power policy related callbacks will be registered
     // later in SotwareInit.
-	// 注册 PnP/power 回调。 电源策略相关的回调将稍后在SotwareInit中注册。
+	// 注册 PNP/POWER 回调。 电源策略相关的回调将稍后在SotwareInit中注册。
     //
     WdfDeviceInitSetPnpPowerEventCallbacks(DeviceInit, &pnpPowerCallbacks);
 
@@ -84,8 +88,7 @@ NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
         deviceContext->PrivateDeviceData = 0;
 
         //
-        // Create a device interface so that application can find and talk
-        // to us.
+        // Create a device interface so that application can find and talk to us.
 		// 创建一个设备接口，以便应用程序可以找到我们并与我们交谈。
         //
         KdPrint(("WdfDeviceCreateDeviceInterface\n"));
@@ -96,11 +99,12 @@ NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
             );
 
         if (NT_SUCCESS(status)) {
+            KdPrint(("EchoQueueInitialize\n"));
+
             //
             // Initialize the I/O Package and any Queues
-			// 初始化I / O包和任何队列
+			// 初始化I/O包和任何队列
             //
-            KdPrint(("EchoQueueInitialize\n"));
             status = EchoQueueInitialize(device);
         }
     }
@@ -109,6 +113,10 @@ NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
 }
 
 /*
+Function:
+    EchoEvtDeviceSelfManagedIoStart
+    设备启动回调
+
 Routine Description:
 
 	This event is called by the Framework when the device is started
@@ -158,6 +166,10 @@ NTSTATUS EchoEvtDeviceSelfManagedIoStart(IN  WDFDEVICE Device)
 }
 
 /*
+Function:
+    EchoEvtDeviceSelfManagedIoSuspend
+    设备停止回调
+
 Routine Description:
 
 	This event is called by the Framework when the device is stopped

@@ -1,4 +1,4 @@
-/*++
+/*
 
 Copyright (c) 1990-2000  Microsoft Corporation
 
@@ -11,18 +11,20 @@ Abstract:
     This is a C version of a very simple sample driver that illustrates
     how to use the driver framework and demonstrates best practices.
 	这是一个非常简单的C版本驱动程序示例，它说明了如何使用驱动程序框架并演示最佳实践。
-
---*/
+    
+*/
 
 #include "public.h"
 
 //
 // The device context performs the same job as
 // a WDM device extension in the driver frameworks
+// 设备上下文，在驱动程序框架中与WDM设备扩展执行相同的工作。
 //
 typedef struct _DEVICE_CONTEXT
 {
     ULONG PrivateDeviceData;  // just a placeholder
+                              // 只是一个占位符
 
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
