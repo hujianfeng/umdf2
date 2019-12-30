@@ -23,29 +23,29 @@ Function:
 
 Routine Description:
 
-	 The I/O dispatch callbacks for the frameworks device object
-	 are configured in this function.
-     在此函数中, 配置框架设备对象的I/O调度回调。
+    The I/O dispatch callbacks for the frameworks device object
+    are configured in this function.
+    在此函数中, 配置框架设备对象的I/O调度回调。
 
-	 A single default I/O Queue is configured for serial request
-	 processing, and a driver context memory allocation is created
-	 to hold our structure QUEUE_CONTEXT.
-     配置了单个默认的I/O队列用于串行请求处理，并创建了一个驱动程序
-     上下文内存分配来保存我们的结构QUEUE_CONTEXT。
+    A single default I/O Queue is configured for serial request
+    processing, and a driver context memory allocation is created
+    to hold our structure QUEUE_CONTEXT.
+    配置了单个默认的I/O队列用于串行请求处理，并创建了一个驱动程序
+    上下文内存分配来保存我们的结构QUEUE_CONTEXT。
 
-	 This memory may be used by the driver automatically synchronized
-	 by the Queue's presentation lock.
-     驱动程序可以使用此内存，该内存由队列的演示文稿锁自动同步。
+    This memory may be used by the driver automatically synchronized
+    by the Queue's presentation lock.
+    驱动程序可以使用此内存，该内存由队列的演示文稿锁自动同步。
 
-	 The lifetime of this memory is tied to the lifetime of the I/O
-	 Queue object, and we register an optional destructor callback
-	 to release any private allocations, and/or resources.
-     该内存的生存期与I/O队列对象的生存期相关，我们注册了一个可选的
-     析构函数回调以释放所有私有分配和/或资源。
+    The lifetime of this memory is tied to the lifetime of the I/O
+    Queue object, and we register an optional destructor callback
+    to release any private allocations, and/or resources.
+    该内存的生存期与I/O队列对象的生存期相关，我们注册了一个可选的
+    析构函数回调以释放所有私有分配和/或资源。
 
 Arguments:
 
-	Device - Handle to a framework device object.
+    Device - Handle to a framework device object.
              框架设备对象句柄
 
 Return Value:
@@ -479,11 +479,11 @@ Function:
 
 Routine Description:
 
-	Subroutine to create timer. By associating the timerobject with
-	the queue, we are basically telling the framework to serialize the queue
-	callbacks with the timer callback. By doing so, we don't have to worry
-	about protecting queue-context structure from multiple threads accessing
-	it simultaneously.
+    Subroutine to create timer. By associating the timerobject with
+    the queue, we are basically telling the framework to serialize the queue
+    callbacks with the timer callback. By doing so, we don't have to worry
+    about protecting queue-context structure from multiple threads accessing
+    it simultaneously.
     创建计时器的子例程。 通过将timer对象与队列相关联，我们基本上是在告诉框架
     将计时器回调与队列回调序列化。 这样，我们不必担心保护队列上下文结构免受
     多个线程同时访问的影响。
@@ -538,16 +538,16 @@ Function:
 
 Routine Description:
 
-	This is the TimerDPC the driver sets up to complete requests.
-	This function is registered when the WDFTIMER object is created, and
-	will automatically synchronize with the I/O Queue callbacks
-	and cancel routine.
+    This is the TimerDPC the driver sets up to complete requests.
+    This function is registered when the WDFTIMER object is created, and
+    will automatically synchronize with the I/O Queue callbacks
+    and cancel routine.
     这是驱动程序设置为完成请求的TimerDPC。创建WDFTIMER对象时将注册此函数，
     该函数将自动与I/O队列回调和取消例程同步。
 
 Arguments:
 
-	Timer - Handle to a framework Timer object.
+    Timer - Handle to a framework Timer object.
             框架Timer对象句柄
 
 Return Value:

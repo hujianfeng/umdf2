@@ -5,13 +5,13 @@ Copyright (c) 1990-2000  Microsoft Corporation
 Module Name:
 
     device.c - Device handling events for example driver.
-	           驱动程序示例的设备处理事件
+               驱动程序示例的设备处理事件
 
 Abstract:
 
     This is a C version of a very simple sample driver that illustrates
     how to use the driver framework and demonstrates best practices.
-	这是一个非常简单的C版本驱动程序示例，它说明了如何使用驱动程序框架并演示最佳实践。
+    这是一个非常简单的C版本驱动程序示例，它说明了如何使用驱动程序框架并演示最佳实践。
 
 */
 
@@ -54,7 +54,7 @@ NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
     //
     // Register PNP/POWER callbacks so that we can start and stop the timer as the device
     // gets started and stopped.
-	// 注册 PNP/POWER 回调，以便我们可以在设备启动和停止时启动和停止计时器。
+    // 注册 PNP/POWER 回调，以便我们可以在设备启动和停止时启动和停止计时器。
     //
     pnpPowerCallbacks.EvtDeviceSelfManagedIoInit    = EchoEvtDeviceSelfManagedIoStart;
     pnpPowerCallbacks.EvtDeviceSelfManagedIoSuspend = EchoEvtDeviceSelfManagedIoSuspend;
@@ -65,7 +65,7 @@ NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
     //
     // Register the pnp and power callbacks. Power policy related callbacks will be registered
     // later in SotwareInit.
-	// 注册 PNP/POWER 回调。 电源策略相关的回调将稍后在SotwareInit中注册。
+    // 注册 PNP/POWER 回调。 电源策略相关的回调将稍后在SotwareInit中注册。
     //
     WdfDeviceInitSetPnpPowerEventCallbacks(DeviceInit, &pnpPowerCallbacks);
 
@@ -81,8 +81,8 @@ NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
         // device.h header file. This function will do the type checking and return
         // the device context. If you pass a wrong object  handle
         // it will return NULL and assert if run under framework verifier mode.
-		// 获取设备上下文并对其进行初始化。 WdfObjectGet_DEVICE_CONTEXT是由device.h头文件中的WDF_DECLARE_CONTEXT_TYPE宏生成的内联函数。 
-		// 该函数将进行类型检查并返回设备上下文。 如果传递了错误的对象句柄，则它将返回NULL并断言如果在框架验证程序模式下运行。
+        // 获取设备上下文并对其进行初始化。 WdfObjectGet_DEVICE_CONTEXT是由device.h头文件中的WDF_DECLARE_CONTEXT_TYPE宏生成的内联函数。 
+        // 该函数将进行类型检查并返回设备上下文。 如果传递了错误的对象句柄，则它将返回NULL并断言如果在框架验证程序模式下运行。
         //
         deviceContext = WdfObjectGet_DEVICE_CONTEXT(device);
         deviceContext->PrivateDeviceData = 0;
@@ -103,7 +103,7 @@ NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
 
             //
             // Initialize the I/O Package and any Queues
-			// 初始化I/O包和任何队列
+            // 初始化I/O包和任何队列
             //
             status = EchoQueueInitialize(device);
         }
@@ -152,7 +152,7 @@ NTSTATUS EchoEvtDeviceSelfManagedIoStart(IN  WDFDEVICE Device)
     //
     // Restart the queue and the periodic timer. We stopped them before going
     // into low power state.
-	// 重新启动队列和定期计时器。 进入低功耗状态之前，我们已将其停止。
+    // 重新启动队列和定期计时器。 进入低功耗状态之前，我们已将其停止。
     //
     KdPrint(("WdfIoQueueStart\n"));
     WdfIoQueueStart(WdfDeviceGetDefaultQueue(Device));
@@ -206,18 +206,18 @@ NTSTATUS EchoEvtDeviceSelfManagedIoSuspend(IN  WDFDEVICE Device)
     // with outstanding I/O. In this sample we will use the 1st approach
     // because it's pretty easy to do. We will restart the queue when the
     // device is restarted.
-	// 在停止计时器之前，我们应确保没有未完成的I/O。 我们需要这样做，因为如果驱动程序拥有请求，则框架无法挂起设备。
-	// 有两种方法可以解决此问题：
+    // 在停止计时器之前，我们应确保没有未完成的I/O。 我们需要这样做，因为如果驱动程序拥有请求，则框架无法挂起设备。
+    // 有两种方法可以解决此问题：
     // 1）我们可以等待定期计时器完成未完成的I/O。
-	// 2）在队列上注册EvtIoStop回调，并确认该请求以通知框架可以使用未完成的 I/O挂起设备。
-	//    在此示例中，我们将使用第一种方法，因为它很容易做到。 重新启动设备后，我们将重新启动队列。
+    // 2）在队列上注册EvtIoStop回调，并确认该请求以通知框架可以使用未完成的 I/O挂起设备。
+    //    在此示例中，我们将使用第一种方法，因为它很容易做到。 重新启动设备后，我们将重新启动队列。
     //
     KdPrint(("WdfIoQueueStopSynchronously\n"));
     WdfIoQueueStopSynchronously(WdfDeviceGetDefaultQueue(Device));
 
     //
     // Stop the watchdog timer and wait for DPC to run to completion if it's already fired.
-	// 停止看门狗计时器，并等待DPC运行完毕（如果已启动）。
+    // 停止看门狗计时器，并等待DPC运行完毕（如果已启动）。
     //
     KdPrint(("WdfTimerStop\n"));
     WdfTimerStop(queueContext->Timer, TRUE);

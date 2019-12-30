@@ -10,7 +10,7 @@ Abstract:
 
     This is a C version of a very simple sample driver that illustrates
     how to use the driver framework and demonstrates best practices.
-	这是一个非常简单的C版本驱动程序示例，它说明了如何使用驱动程序框架并演示最佳实践。
+    这是一个非常简单的C版本驱动程序示例，它说明了如何使用驱动程序框架并演示最佳实践。
 
 */
 
