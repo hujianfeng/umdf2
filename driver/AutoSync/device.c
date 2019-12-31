@@ -72,6 +72,8 @@ NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
 
     KdPrint(("WdfDeviceCreate\n"));
+
+    // 创建框架设备对象
     status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
     if (NT_SUCCESS(status)) {

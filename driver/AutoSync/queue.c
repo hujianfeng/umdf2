@@ -92,7 +92,6 @@ NTSTATUS EchoQueueInitialize(WDFDEVICE Device)
     // 以便使用相同的锁同步队列和计时器回调。
     //
     queueAttributes.SynchronizationScope = WdfSynchronizationScopeQueue;
-
     queueAttributes.EvtDestroyCallback = EchoEvtIoQueueContextDestroy;
 
     KdPrint(("WdfIoQueueCreate\n"));
@@ -111,10 +110,8 @@ NTSTATUS EchoQueueInitialize(WDFDEVICE Device)
     // Get our Driver Context memory from the returned Queue handle
     // 从返回的队列句柄获取我们的驱动程序上下文内存
     queueContext = QueueGetContext(queue);
-
     queueContext->WriteMemory = NULL;
     queueContext->Timer = NULL;
-
     queueContext->CurrentRequest = NULL;
     queueContext->CurrentStatus = STATUS_INVALID_DEVICE_REQUEST;
 
@@ -186,6 +183,7 @@ VOID EchoEvtIoRead(
         Queue, Request, Length));
     //
     // No data to read
+    // 没有数据可读取
     //
     if ((queueContext->WriteMemory == NULL)) {
         WdfRequestCompleteWithInformation(Request, STATUS_SUCCESS, (ULONG_PTR)0L);
@@ -194,7 +192,7 @@ VOID EchoEvtIoRead(
 
     //
     // Read what we have
-    // 没有数据可读取
+    // 有数据时读
     //
     WdfMemoryGetBuffer(queueContext->WriteMemory, &writeMemoryLength);
     _Analysis_assume_(writeMemoryLength > 0);
@@ -523,10 +521,11 @@ NTSTATUS EchoTimerCreate(
                                           // 与I/O队列同步
     timerAttributes.ExecutionLevel = WdfExecutionLevelPassive;
 
-    Status = WdfTimerCreate(&timerConfig,
-                            &timerAttributes,
-                            Timer     // Output handle
-                           );
+    Status = WdfTimerCreate(
+        &timerConfig,
+        &timerAttributes,
+        Timer     // Output handle
+    );
 
     return Status;
 }

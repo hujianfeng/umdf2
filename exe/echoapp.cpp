@@ -79,7 +79,6 @@ int __cdecl main(_In_ int argc, _In_reads_(argc) char* argv[])
             else {
                 G_LimitedLoops = FALSE;
             }
-
         }
         else {
             printf("Usage:\n");
@@ -134,12 +133,12 @@ int __cdecl main(_In_ int argc, _In_reads_(argc) char* argv[])
         // Create a reader thread
         // 创建一个读线程
         //
-        th1 = CreateThread( NULL,                   // Default Security Attrib.
-                            0,                      // Initial Stack Size,
-                            (LPTHREAD_START_ROUTINE) AsyncIo, // Thread Func
-                            (LPVOID)READER_TYPE,
-                            0,                      // Creation Flags
-                            NULL );                 // Don't need the Thread Id.
+        th1 = CreateThread(NULL,                   // Default Security Attrib.
+                           0,                      // Initial Stack Size,
+                           (LPTHREAD_START_ROUTINE) AsyncIo, // Thread Func
+                           (LPVOID)READER_TYPE,
+                           0,                      // Creation Flags
+                           NULL);                  // Don't need the Thread Id.
 
         if (th1 == NULL) {
             printf("Couldn't create reader thread - error %d\n", GetLastError());
@@ -249,7 +248,7 @@ BOOLEAN PerformWriteReadTest(
 
     ULONG  bytesReturned =0;
     PUCHAR WriteBuffer = NULL,
-                   ReadBuffer = NULL;
+           ReadBuffer = NULL;
     BOOLEAN result = TRUE;
 
     // 建立写缓冲区
