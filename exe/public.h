@@ -18,6 +18,8 @@ Environment:
 
 --*/
 
+#pragma once
+
 #define WHILE(a) \
 __pragma(warning(suppress:4127)) while(a)
 

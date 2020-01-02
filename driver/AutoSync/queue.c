@@ -14,6 +14,8 @@ Abstract:
 
 */
 
+#pragma once
+
 #include "driver.h"
 
 /*
@@ -54,7 +56,7 @@ Return Value:
 */
 NTSTATUS EchoQueueInitialize(WDFDEVICE Device)
 {
-    KdPrint(("EchoQueueInitialize\n"));
+    LOG("EchoQueueInitialize\n");
 
     WDFQUEUE queue;
     NTSTATUS status;
@@ -94,7 +96,7 @@ NTSTATUS EchoQueueInitialize(WDFDEVICE Device)
     queueAttributes.SynchronizationScope = WdfSynchronizationScopeQueue;
     queueAttributes.EvtDestroyCallback = EchoEvtIoQueueContextDestroy;
 
-    KdPrint(("WdfIoQueueCreate\n"));
+    LOG("WdfIoQueueCreate\n");
     status = WdfIoQueueCreate(
                  Device,
                  &queueConfig,
@@ -103,7 +105,7 @@ NTSTATUS EchoQueueInitialize(WDFDEVICE Device)
                  );
 
     if( !NT_SUCCESS(status) ) {
-        KdPrint(("WdfIoQueueCreate failed 0x%x\n",status));
+        LOG("WdfIoQueueCreate failed 0x%x\n",status);
         return status;
     }
 
@@ -119,10 +121,9 @@ NTSTATUS EchoQueueInitialize(WDFDEVICE Device)
     // Create the Queue timer
     // 创建队列计时器
     //
-    KdPrint(("EchoTimerCreate\n"));
     status = EchoTimerCreate(&queueContext->Timer, queue);
     if (!NT_SUCCESS(status)) {
-        KdPrint(("Error creating timer 0x%x\n",status));
+        LOG("Error creating timer 0x%x\n",status);
         return status;
     }
 
@@ -170,7 +171,7 @@ VOID EchoEvtIoRead(
     IN size_t     Length
 )
 {
-    KdPrint(("EchoEvtIoRead\n"));
+    LOG("EchoEvtIoRead\n");
 
     NTSTATUS Status;
     PQUEUE_CONTEXT queueContext = QueueGetContext(Queue);
@@ -179,8 +180,8 @@ VOID EchoEvtIoRead(
 
     _Analysis_assume_(Length > 0);
 
-    KdPrint(("EchoEvtIoRead Called! Queue 0x%p, Request 0x%p Length %d\n",
-        Queue, Request, Length));
+    LOG("EchoEvtIoRead Called! Queue 0x%p, Request 0x%p Length %d\n",
+        Queue, Request, Length);
     //
     // No data to read
     // 没有数据可读取
@@ -207,7 +208,7 @@ VOID EchoEvtIoRead(
     //
     Status = WdfRequestRetrieveOutputMemory(Request, &memory);
     if (!NT_SUCCESS(Status)) {
-        KdPrint(("EchoEvtIoRead Could not get request memory buffer 0x%x\n", Status));
+        LOG("EchoEvtIoRead Could not get request memory buffer 0x%x\n", Status);
         WdfVerifierDbgBreakPoint();
         WdfRequestCompleteWithInformation(Request, Status, 0L);
 
@@ -222,7 +223,7 @@ VOID EchoEvtIoRead(
         Length
     );
     if (!NT_SUCCESS(Status)) {
-        KdPrint(("EchoEvtIoRead: WdfMemoryCopyFromBuffer failed 0x%x\n", Status));
+        LOG("EchoEvtIoRead: WdfMemoryCopyFromBuffer failed 0x%x\n", Status);
         WdfRequestComplete(Request, Status);
         return;
     }
@@ -286,7 +287,7 @@ VOID EchoEvtIoWrite(
     IN size_t     Length
 )
 {
-    KdPrint(("EchoEvtIoWrite\n"));
+    LOG("EchoEvtIoWrite\n");
 
     NTSTATUS Status;
     WDFMEMORY memory;
@@ -295,12 +296,12 @@ VOID EchoEvtIoWrite(
 
     _Analysis_assume_(Length > 0);
 
-    KdPrint(("EchoEvtIoWrite Called! Queue 0x%p, Request 0x%p Length %d\n",
-        Queue, Request, Length));
+    LOG("EchoEvtIoWrite Called! Queue 0x%p, Request 0x%p Length %d\n",
+        Queue, Request, Length);
 
     if (Length > MAX_WRITE_LENGTH) {
-        KdPrint(("EchoEvtIoWrite Buffer Length to big %d, Max is %d\n",
-            Length, MAX_WRITE_LENGTH));
+        LOG("EchoEvtIoWrite Buffer Length to big %d, Max is %d\n",
+            Length, MAX_WRITE_LENGTH);
         WdfRequestCompleteWithInformation(Request, STATUS_BUFFER_OVERFLOW, 0L);
         return;
     }
@@ -309,8 +310,8 @@ VOID EchoEvtIoWrite(
     // 获取内存缓冲区
     Status = WdfRequestRetrieveInputMemory(Request, &memory);
     if (!NT_SUCCESS(Status)) {
-        KdPrint(("EchoEvtIoWrite Could not get request memory buffer 0x%x\n",
-            Status));
+        LOG("EchoEvtIoWrite Could not get request memory buffer 0x%x\n",
+            Status);
         WdfVerifierDbgBreakPoint();
         WdfRequestComplete(Request, Status);
         return;
@@ -332,7 +333,7 @@ VOID EchoEvtIoWrite(
     );
 
     if (!NT_SUCCESS(Status)) {
-        KdPrint(("EchoEvtIoWrite: Could not allocate %d byte buffer\n", Length));
+        LOG("EchoEvtIoWrite: Could not allocate %d byte buffer\n", Length);
         WdfRequestComplete(Request, STATUS_INSUFFICIENT_RESOURCES);
         return;
     }
@@ -344,7 +345,7 @@ VOID EchoEvtIoWrite(
         writeBuffer,
         Length);
     if (!NT_SUCCESS(Status)) {
-        KdPrint(("EchoEvtIoWrite WdfMemoryCopyToBuffer failed 0x%x\n", Status));
+        LOG("EchoEvtIoWrite WdfMemoryCopyToBuffer failed 0x%x\n", Status);
         WdfVerifierDbgBreakPoint();
 
         WdfObjectDelete(queueContext->WriteMemory);
@@ -395,11 +396,11 @@ Return Value:
 */
 VOID EchoEvtRequestCancel(IN WDFREQUEST Request)
 {
-    KdPrint(("EchoEvtRequestCancel\n"));
+    LOG("EchoEvtRequestCancel\n");
 
     PQUEUE_CONTEXT queueContext = QueueGetContext(WdfRequestGetIoQueue(Request));
 
-    KdPrint(("EchoEvtRequestCancel called on Request 0x%p\n", Request));
+    LOG("EchoEvtRequestCancel called on Request 0x%p\n", Request);
 
     //
     // The following is race free by the callside or DPC side
@@ -445,7 +446,7 @@ Return Value:
 */
 VOID EchoEvtIoQueueContextDestroy(WDFOBJECT Object)
 {
-    KdPrint(("EchoEvtIoQueueContextDestroy\n"));
+    LOG("EchoEvtIoQueueContextDestroy\n");
 
     PQUEUE_CONTEXT queueContext = QueueGetContext(Object);
 
@@ -498,7 +499,7 @@ NTSTATUS EchoTimerCreate(
     IN WDFQUEUE        Queue
     )
 {
-    KdPrint(("EchoTimerCreate\n"));
+    LOG("EchoTimerCreate\n");
 
     NTSTATUS Status;
     WDF_TIMER_CONFIG       timerConfig;
@@ -555,7 +556,7 @@ Return Value:
 */
 VOID EchoEvtTimerFunc(IN WDFTIMER  Timer)
 {
-    KdPrint(("EchoEvtTimerFunc\n"));
+    LOG("EchoEvtTimerFunc\n");
 
     NTSTATUS    Status;
     WDFREQUEST  Request;
@@ -589,12 +590,12 @@ VOID EchoEvtTimerFunc(IN WDFTIMER  Timer)
             queueContext->CurrentRequest = NULL;
             Status = queueContext->CurrentStatus;
 
-            KdPrint(("CustomTimerDPC Completing request 0x%p, Status 0x%x \n", Request, Status));
+            LOG("CustomTimerDPC Completing request 0x%p, Status 0x%x \n", Request, Status);
 
             WdfRequestComplete(Request, Status);
         }
         else {
-            KdPrint(("CustomTimerDPC Request 0x%p is STATUS_CANCELLED, not completing\n", Request));
+            LOG("CustomTimerDPC Request 0x%p is STATUS_CANCELLED, not completing\n", Request);
         }
     }
 

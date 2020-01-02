@@ -14,6 +14,8 @@ Abstract:
     
 */
 
+#pragma once
+
 #include "public.h"
 
 //
@@ -49,4 +51,6 @@ NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit);
 EVT_WDF_DEVICE_SELF_MANAGED_IO_INIT EchoEvtDeviceSelfManagedIoStart;
 
 EVT_WDF_DEVICE_SELF_MANAGED_IO_SUSPEND EchoEvtDeviceSelfManagedIoSuspend;
+
+void LOG(const char* format, ...);
 

@@ -88,7 +88,7 @@ NTSTATUS DriverEntry(
 	IN PUNICODE_STRING RegistryPath
 )
 {
-	KdPrint(("DriverEntry\n"));
+	LOG("DriverEntry\n");
 
 	WDF_DRIVER_CONFIG config;
 	NTSTATUS status;
@@ -99,7 +99,7 @@ NTSTATUS DriverEntry(
 		EchoEvtDeviceAdd
 	);
 
-	KdPrint(("WdfDriverCreate\n"));
+	LOG("WdfDriverCreate\n");
 
 	// 创建调用驱动程序框架的驱动程序对象
 	status = WdfDriverCreate(
@@ -109,7 +109,7 @@ NTSTATUS DriverEntry(
 		&config,
 		WDF_NO_HANDLE);
 	if (!NT_SUCCESS(status)) {
-		KdPrint(("Error: WdfDriverCreate failed 0x%x\n", status));
+		LOG("Error: WdfDriverCreate failed 0x%x\n", status);
 		return status;
 	}
 
@@ -150,13 +150,11 @@ NTSTATUS EchoEvtDeviceAdd(
 	IN PWDFDEVICE_INIT DeviceInit
 )
 {
-	KdPrint(("EchoEvtDeviceAdd\n"));
+	LOG("EchoEvtDeviceAdd\n");
 
 	NTSTATUS status;
 
 	UNREFERENCED_PARAMETER(Driver);
-
-	KdPrint(("EchoDeviceCreate\n"));
 
 	// 回调函数主要调用了EchoDeviceCreate()
 	status = EchoDeviceCreate(DeviceInit);
@@ -184,7 +182,7 @@ Return Value:
 */
 NTSTATUS EchoPrintDriverVersion( )
 {
-	KdPrint(("EchoPrintDriverVersion\n"));
+	LOG("EchoPrintDriverVersion\n");
 
 	NTSTATUS status;
 	WDFSTRING string;
@@ -197,7 +195,7 @@ NTSTATUS EchoPrintDriverVersion( )
 	//
 	status = WdfStringCreate(NULL, WDF_NO_OBJECT_ATTRIBUTES, &string);
 	if (!NT_SUCCESS(status)) {
-		KdPrint(("Error: WdfStringCreate failed 0x%x\n", status));
+		LOG("Error: WdfStringCreate failed 0x%x\n", status);
 		return status;
 	}
 
@@ -211,12 +209,12 @@ NTSTATUS EchoPrintDriverVersion( )
 		// 无需担心删除字符串对象，因为默认情况下该字符串对象是驱动程序的父对象，
 		// 并且当DriverEntry返回失败状态时删除该driverObject时，它将被删除。
 		//
-		KdPrint(("Error: WdfDriverRetrieveVersionString failed 0x%x\n", status));
+		LOG("Error: WdfDriverRetrieveVersionString failed 0x%x\n", status);
 		return status;
 	}
 
 	WdfStringGetUnicodeString(string, &us);
-	KdPrint(("Echo Sample %wZ\n", &us));
+	LOG("Echo Sample %wZ\n", &us);
 
 	WdfObjectDelete(string);
 	string = NULL; // To avoid referencing a deleted object.
@@ -228,10 +226,10 @@ NTSTATUS EchoPrintDriverVersion( )
 	//
 	WDF_DRIVER_VERSION_AVAILABLE_PARAMS_INIT(&ver, 1, 0);
 	if (WdfDriverIsVersionAvailable(WdfGetDriver(), &ver) == TRUE) {
-		KdPrint(("Yes, framework version is 1.0\n"));
+		LOG("Yes, framework version is 1.0\n");
 	}
 	else {
-		KdPrint(("No, framework verison is not 1.0\n"));
+		LOG("No, framework verison is not 1.0\n");
 	}
 
 	return STATUS_SUCCESS;

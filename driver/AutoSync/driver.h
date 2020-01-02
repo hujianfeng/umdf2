@@ -14,6 +14,8 @@ Abstract:
     
 */
 
+#pragma once
+
 #define INITGUID
 
 #include <windows.h>
@@ -25,7 +27,7 @@ Abstract:
 #if DBG
 #define ASSERT( exp ) \
     ((!(exp)) ? \
-        (KdPrint(( "\n*** Assertion failed: " #exp "\n\n")), \
+        (LOG(("\n*** Assertion failed: " #exp "\n\n")), \
          DebugBreak(), \
          FALSE) : \
         TRUE)

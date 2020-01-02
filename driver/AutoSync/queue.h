@@ -14,6 +14,8 @@ Abstract:
 
 */
 
+#pragma once
+
 // Set max write length for testing
 // 设置最大写入长度以进行测试
 #define MAX_WRITE_LENGTH  1024*40

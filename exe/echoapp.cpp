@@ -18,7 +18,6 @@ Environment:
 
 --*/
 
-
 #include <DriverSpecs.h>
 _Analysis_mode_(_Analysis_code_type_user_code_)
 
@@ -57,13 +56,14 @@ BOOL GetDevicePath(
     _In_ size_t BufLen
     );
 
+#define LOG printf
 
 //
 // 入口函数
 //
 int __cdecl main(_In_ int argc, _In_reads_(argc) char* argv[])
 {
-    OutputDebugStringA("main\n");
+    LOG("main\n");
 
     HANDLE  hDevice = INVALID_HANDLE_VALUE;
     HANDLE  th1 = NULL;
@@ -81,11 +81,11 @@ int __cdecl main(_In_ int argc, _In_reads_(argc) char* argv[])
             }
         }
         else {
-            printf("Usage:\n");
-            printf("    Echoapp.exe         --- Send single write and read request synchronously\n");
-            printf("    Echoapp.exe -Async  --- Send reads and writes asynchronously without terminating\n");
-            printf("    Echoapp.exe -Async <number> --- Send <number> reads and writes asynchronously\n");
-            printf("Exit the app anytime by pressing Ctrl-C\n");
+            LOG("Usage:\n");
+            LOG("    Echoapp.exe         --- Send single write and read request synchronously\n");
+            LOG("    Echoapp.exe -Async  --- Send reads and writes asynchronously without terminating\n");
+            LOG("    Echoapp.exe -Async <number> --- Send <number> reads and writes asynchronously\n");
+            LOG("Exit the app anytime by pressing Ctrl-C\n");
             result = FALSE;
             goto exit;
         }
@@ -103,7 +103,7 @@ int __cdecl main(_In_ int argc, _In_reads_(argc) char* argv[])
         goto exit;
     }
 
-    printf("DevicePath: %ws\n", G_DevicePath);
+    LOG("DevicePath: %ws\n", G_DevicePath);
 
     //
     // 建立驱动设备
@@ -117,17 +117,16 @@ int __cdecl main(_In_ int argc, _In_reads_(argc) char* argv[])
                          NULL);
 
     if (hDevice == INVALID_HANDLE_VALUE) {
-        printf("Failed to open device. Error %d\n",GetLastError());
+        LOG("Failed to open device. Error %d\n",GetLastError());
         result = FALSE;
         goto exit;
     }
 
-    printf("Opened device successfully\n");
-    OutputDebugStringA("Opened device successfully\n");
+    LOG("Opened device successfully\n");
 
     if(G_PerformAsyncIo) {
 
-        printf("Starting AsyncIo\n");
+        LOG("Starting AsyncIo\n");
 
         //
         // Create a reader thread
@@ -141,7 +140,7 @@ int __cdecl main(_In_ int argc, _In_reads_(argc) char* argv[])
                            NULL);                  // Don't need the Thread Id.
 
         if (th1 == NULL) {
-            printf("Couldn't create reader thread - error %d\n", GetLastError());
+            LOG("Couldn't create reader thread - error %d\n", GetLastError());
             result = FALSE;
             goto exit;
         }
@@ -195,7 +194,7 @@ PUCHAR CreatePatternBuffer(IN ULONG Length)
 
     pBuf = (PUCHAR)malloc(Length);
     if( pBuf == NULL ) {
-        printf("Could not allocate %d byte buffer\n",Length);
+        LOG("Could not allocate %d byte buffer\n",Length);
         return NULL;
     }
 
@@ -217,15 +216,13 @@ BOOLEAN VerifyPatternBuffer(
 	_In_reads_bytes_(Length) PUCHAR pBuffer,
 	_In_ ULONG Length)
 {
-    OutputDebugStringA("VerifyPatternBuffer\n");
-
     unsigned int i;
     PUCHAR p = pBuffer;
 
     for( i=0; i < Length; i++ ) {
 
         if( *p != (UCHAR)(i & 0xFF) ) {
-            printf("Pattern changed. SB 0x%x, Is 0x%x\n",
+            LOG("Pattern changed. SB 0x%x, Is 0x%x\n",
                    (UCHAR)(i & 0xFF), *p);
             return FALSE;
         }
@@ -244,8 +241,6 @@ BOOLEAN PerformWriteReadTest(
     IN ULONG TestLength
     )
 {
-    OutputDebugStringA("PerformWriteReadTest\n");
-
     ULONG  bytesReturned =0;
     PUCHAR WriteBuffer = NULL,
            ReadBuffer = NULL;
@@ -263,7 +258,7 @@ BOOLEAN PerformWriteReadTest(
     ReadBuffer = (PUCHAR)malloc(TestLength);
     if( ReadBuffer == NULL ) {
 
-        printf("PerformWriteReadTest: Could not allocate %d "
+        LOG("PerformWriteReadTest: Could not allocate %d "
                "bytes ReadBuffer\n",TestLength);
 
          result = FALSE;
@@ -280,7 +275,7 @@ BOOLEAN PerformWriteReadTest(
             &bytesReturned,
             NULL)) {
 
-        printf ("PerformWriteReadTest: WriteFile failed: "
+        LOG ("PerformWriteReadTest: WriteFile failed: "
                 "Error %d\n", GetLastError());
 
         result = FALSE;
@@ -291,14 +286,14 @@ BOOLEAN PerformWriteReadTest(
 
         if( bytesReturned != TestLength ) {
 
-            printf("bytes written is not test length! Written %d, "
+            LOG("bytes written is not test length! Written %d, "
                    "SB %d\n",bytesReturned, TestLength);
 
             result = FALSE;
             goto Cleanup;
         }
 
-        printf ("%d Pattern Bytes Written successfully\n",
+        LOG ("%d Pattern Bytes Written successfully\n",
                 bytesReturned);
     }
 
@@ -311,7 +306,7 @@ BOOLEAN PerformWriteReadTest(
             &bytesReturned,
             NULL)) {
 
-        printf ("PerformWriteReadTest: ReadFile failed: "
+        LOG ("PerformWriteReadTest: ReadFile failed: "
                 "Error %d\n", GetLastError());
 
         result = FALSE;
@@ -322,7 +317,7 @@ BOOLEAN PerformWriteReadTest(
 
         if( bytesReturned != TestLength ) {
 
-            printf("bytes Read is not test length! Read %d, "
+            LOG("bytes Read is not test length! Read %d, "
                    "SB %d\n",bytesReturned, TestLength);
 
              //
@@ -333,19 +328,19 @@ BOOLEAN PerformWriteReadTest(
             goto Cleanup;
         }
 
-        printf ("%d Pattern Bytes Read successfully\n",bytesReturned);
+        LOG ("%d Pattern Bytes Read successfully\n",bytesReturned);
     }
 
     // 验证读取的数据是否与模拟一致
     if( !VerifyPatternBuffer(ReadBuffer, TestLength) ) {
 
-        printf("Verify failed\n");
+        LOG("Verify failed\n");
 
         result = FALSE;
         goto Cleanup;
     }
 
-    printf("Pattern Verified successfully\n");
+    LOG("Pattern Verified successfully\n");
 
 Cleanup:
 
@@ -373,8 +368,6 @@ Cleanup:
 //
 ULONG AsyncIo(PVOID ThreadParameter)
 {
-    OutputDebugStringA("AsyncIo\n");
-
     HANDLE hDevice = INVALID_HANDLE_VALUE;
     HANDLE hCompletionPort = NULL;
     OVERLAPPED *pOvList = NULL;
@@ -401,7 +394,7 @@ ULONG AsyncIo(PVOID ThreadParameter)
 
 
     if (hDevice == INVALID_HANDLE_VALUE) {
-        printf("Cannot open %ws error %d\n", G_DevicePath, GetLastError());
+        LOG("Cannot open %ws error %d\n", G_DevicePath, GetLastError());
         result = FALSE;
         goto Error;
     }
@@ -410,7 +403,7 @@ ULONG AsyncIo(PVOID ThreadParameter)
     // 将打开的文件句柄的实例与I/O完成端口相关联，可使进程接收有关该文件句柄的异步I/O操作完成的通知。
     hCompletionPort = CreateIoCompletionPort(hDevice, NULL, 1, 0);
     if (hCompletionPort == NULL) {
-        printf("Cannot open completion port %d \n",GetLastError());
+        LOG("Cannot open completion port %d \n",GetLastError());
         result = FALSE;
         goto Error;
     }
@@ -439,14 +432,14 @@ ULONG AsyncIo(PVOID ThreadParameter)
 
     pOvList = (OVERLAPPED *)malloc(maxPendingRequests * sizeof(OVERLAPPED));
     if (pOvList == NULL) {
-        printf("Cannot allocate overlapped array \n");
+        LOG("Cannot allocate overlapped array \n");
         result = FALSE;
         goto Error;
     }
 
     buf = (PUCHAR)malloc(maxPendingRequests * BUFFER_SIZE);
     if (buf == NULL) {
-        printf("Cannot allocate buffer \n");
+        LOG("Cannot allocate buffer \n");
         result = FALSE;
         goto Error;
     }
@@ -470,7 +463,7 @@ ULONG AsyncIo(PVOID ThreadParameter)
 
                 error = GetLastError();
                 if (error != ERROR_IO_PENDING) {
-                    printf(" %dth Read failed %d \n", (ULONG) i, GetLastError());
+                    LOG(" %dth Read failed %d \n", (ULONG) i, GetLastError());
                     result = FALSE;
                     goto Error;
                 }
@@ -486,7 +479,7 @@ ULONG AsyncIo(PVOID ThreadParameter)
                       &pOvList[i]) == 0) {
                 error = GetLastError();
                 if (error != ERROR_IO_PENDING) {
-                    printf(" %dth Write failed %d \n", (ULONG) i, GetLastError());
+                    LOG(" %dth Write failed %d \n", (ULONG) i, GetLastError());
                     result = FALSE;
                     goto Error;
                 }
@@ -501,7 +494,7 @@ ULONG AsyncIo(PVOID ThreadParameter)
     WHILE (1) {
 
         if ( GetQueuedCompletionStatus(hCompletionPort, &numberOfBytesTransferred, &key, &completedOv, INFINITE) == 0) {
-            printf("GetQueuedCompletionStatus failed %d\n", GetLastError());
+            LOG("GetQueuedCompletionStatus failed %d\n", GetLastError());
             result = FALSE;
             goto Error;
         }
@@ -513,7 +506,7 @@ ULONG AsyncIo(PVOID ThreadParameter)
         if (ioType == READER_TYPE) {
 
             i = completedOv - pOvList;
-            printf("Number of bytes read by request number %Id is %d\n", i, numberOfBytesTransferred);
+            LOG("Number of bytes read by request number %Id is %d\n", i, numberOfBytesTransferred);
 
             //
             // If we're done with the I/Os, then exit
@@ -539,7 +532,7 @@ ULONG AsyncIo(PVOID ThreadParameter)
                       completedOv) == 0) {
                 error = GetLastError();
                 if (error != ERROR_IO_PENDING) {
-                    printf("%Idth Read failed %d \n", i, GetLastError());
+                    LOG("%Idth Read failed %d \n", i, GetLastError());
                     result = FALSE;
                     goto Error;
                 }
@@ -549,7 +542,7 @@ ULONG AsyncIo(PVOID ThreadParameter)
 
             i = completedOv - pOvList;
 
-            printf("Number of bytes written by request number %Id is %d\n", i, numberOfBytesTransferred);
+            LOG("Number of bytes written by request number %Id is %d\n", i, numberOfBytesTransferred);
 
             //
             // If we're done with the I/Os, then exit
@@ -576,7 +569,7 @@ ULONG AsyncIo(PVOID ThreadParameter)
                 error = GetLastError();
                 if (error != ERROR_IO_PENDING) {
 
-                    printf("%Idth write failed %d \n", i, GetLastError());
+                    LOG("%Idth write failed %d \n", i, GetLastError());
                     result = FALSE;
                     goto Error;
                 }
@@ -613,8 +606,6 @@ BOOL GetDevicePath(
     _In_ size_t BufLen
     )
 {
-    OutputDebugStringA("GetDevicePath\n");
-
     CONFIGRET cr = CR_SUCCESS;
     PWSTR deviceInterfaceList = NULL;
     ULONG deviceInterfaceListLength = 0;
@@ -628,20 +619,20 @@ BOOL GetDevicePath(
                 NULL,
                 CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
     if (cr != CR_SUCCESS) {
-        printf("Error 0x%x retrieving device interface list size.\n", cr);
+        LOG("Error 0x%x retrieving device interface list size.\n", cr);
         goto clean0;
     }
 
     if (deviceInterfaceListLength <= 1) {
         bRet = FALSE;
-        printf("Error: No active device interfaces found.\n"
+        LOG("Error: No active device interfaces found.\n"
             " Is the sample driver loaded?");
         goto clean0;
     }
 
     deviceInterfaceList = (PWSTR)malloc(deviceInterfaceListLength * sizeof(WCHAR));
     if (deviceInterfaceList == NULL) {
-        printf("Error allocating memory for device interface list.\n");
+        LOG("Error allocating memory for device interface list.\n");
         goto clean0;
     }
     ZeroMemory(deviceInterfaceList, deviceInterfaceListLength * sizeof(WCHAR));
@@ -653,20 +644,20 @@ BOOL GetDevicePath(
                 deviceInterfaceListLength,
                 CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
     if (cr != CR_SUCCESS) {
-        printf("Error 0x%x retrieving device interface list.\n", cr);
+        LOG("Error 0x%x retrieving device interface list.\n", cr);
         goto clean0;
     }
 
     nextInterface = deviceInterfaceList + wcslen(deviceInterfaceList) + 1;
     if (*nextInterface != UNICODE_NULL) {
-        printf("Warning: More than one device interface instance found. \n"
+        LOG("Warning: More than one device interface instance found. \n"
             "Selecting first matching device.\n\n");
     }
 
     hr = StringCchCopy(DevicePath, BufLen, deviceInterfaceList);
     if (FAILED(hr)) {
         bRet = FALSE;
-        printf("Error: StringCchCopy failed with HRESULT 0x%x", hr);
+        LOG("Error: StringCchCopy failed with HRESULT 0x%x", hr);
         goto clean0;
     }
 
