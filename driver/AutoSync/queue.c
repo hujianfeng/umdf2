@@ -18,6 +18,8 @@ Abstract:
 
 #include "driver.h"
 
+#define IOCTL_CODE_TEST CTL_CODE(FILE_DEVICE_UNKNOWN, 0x800, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
 /*
 Function:
     EchoQueueInitialize
@@ -79,6 +81,7 @@ NTSTATUS EchoQueueInitialize(WDFDEVICE Device)
     // 注册队列读写回调
     queueConfig.EvtIoRead   = EchoEvtIoRead;
     queueConfig.EvtIoWrite  = EchoEvtIoWrite;
+    queueConfig.EvtIoDeviceControl = EvtIoDeviceControl;
 
     //
     // Fill in a callback for destroy, and our QUEUE_CONTEXT size
@@ -367,6 +370,41 @@ VOID EchoEvtIoWrite(
     // 将完成时间从计时器dpc推迟到另一个线程
     queueContext->CurrentRequest = Request;
     queueContext->CurrentStatus = Status;
+
+    return;
+}
+
+VOID EvtIoDeviceControl(
+    IN WDFQUEUE   Queue,
+    IN WDFREQUEST Request,
+    IN size_t     OutputBufferLength,
+    IN size_t     InputBufferLength,
+    IN ULONG      IoControlCode
+)
+{
+    LOG("EvtIoDeviceControl\n");
+
+    UNREFERENCED_PARAMETER(Queue);
+    UNREFERENCED_PARAMETER(OutputBufferLength);
+    UNREFERENCED_PARAMETER(InputBufferLength);
+
+    NTSTATUS  status;
+    PAGED_CODE();
+
+    switch (IoControlCode)
+    {
+        case IOCTL_CODE_TEST:
+            LOG("EvtIoDeviceControl, IOCTL_CODE_TEST\n");
+            status = STATUS_SUCCESS;
+            WdfRequestCompleteWithInformation(Request, status, 0);
+            break;
+
+        default:
+            LOG("EvtIoDeviceControl, STATUS_INVALID_DEVICE_REQUEST\n");
+            status = STATUS_INVALID_DEVICE_REQUEST;
+            WdfRequestCompleteWithInformation(Request, status, 0);
+            break;
+    }
 
     return;
 }

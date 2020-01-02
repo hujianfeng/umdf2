@@ -28,6 +28,7 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #include <cfgmgr32.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <winioctl.h>
 #include "public.h"
 
 #define NUM_ASYNCH_IO   100
@@ -37,6 +38,8 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 #define WRITER_TYPE   2
 
 #define MAX_DEVPATH_LENGTH    256
+
+#define IOCTL_CODE_TEST CTL_CODE(FILE_DEVICE_UNKNOWN, 0x800, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 BOOLEAN G_PerformAsyncIo;      // 是否使用异步I/O
 BOOLEAN G_LimitedLoops;        // 是否有限循环
@@ -341,6 +344,20 @@ BOOLEAN PerformWriteReadTest(
     }
 
     LOG("Pattern Verified successfully\n");
+
+    ULONG nOutput = 0;
+    if (!DeviceIoControl(hDevice,
+        IOCTL_CODE_TEST,
+        NULL,
+        0,
+        NULL,
+        0,
+        &nOutput,
+        NULL)
+        )
+    {
+        printf("ERROR: DeviceIoControl returns %0x.", GetLastError());
+    }
 
 Cleanup:
 
