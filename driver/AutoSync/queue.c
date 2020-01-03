@@ -31,34 +31,34 @@ Routine Description:
     are configured in this function.
     在此函数中, 配置框架设备对象的I/O调度回调。
 
-    A single default I/O Queue is configured for serial request
+    A single default I/O queue is configured for serial request
     processing, and a driver context memory allocation is created
     to hold our structure QUEUE_CONTEXT.
     配置了单个默认的I/O队列用于串行请求处理，并创建了一个驱动程序
     上下文内存分配来保存我们的结构QUEUE_CONTEXT。
 
     This memory may be used by the driver automatically synchronized
-    by the Queue's presentation lock.
+    by the queue's presentation lock.
     驱动程序可以使用此内存，该内存由队列的演示文稿锁自动同步。
 
     The lifetime of this memory is tied to the lifetime of the I/O
-    Queue object, and we register an optional destructor callback
+    queue object, and we register an optional destructor callback
     to release any private allocations, and/or resources.
     该内存的生存期与I/O队列对象的生存期相关，我们注册了一个可选的
     析构函数回调以释放所有私有分配和/或资源。
 
 Arguments:
 
-    Device - Handle to a framework device object.
+    device - Handle to a framework device object.
              框架设备对象句柄
 
 Return Value:
 
 	NTSTATUS
 */
-NTSTATUS EchoQueueInitialize(WDFDEVICE Device)
+NTSTATUS EchoQueueInitialize(WDFDEVICE device)
 {
-    LOG("EchoQueueInitialize\n");
+    LOG("Echo, EchoQueueInitialize\n");
 
     WDFQUEUE queue;
     NTSTATUS status;
@@ -99,20 +99,20 @@ NTSTATUS EchoQueueInitialize(WDFDEVICE Device)
     queueAttributes.SynchronizationScope = WdfSynchronizationScopeQueue;
     queueAttributes.EvtDestroyCallback = EchoEvtIoQueueContextDestroy;
 
-    LOG("WdfIoQueueCreate\n");
+    LOG("Echo, WdfIoQueueCreate\n");
     status = WdfIoQueueCreate(
-                 Device,
+                 device,
                  &queueConfig,
                  &queueAttributes,
                  &queue
                  );
 
     if( !NT_SUCCESS(status) ) {
-        LOG("WdfIoQueueCreate failed 0x%x\n",status);
+        LOG("Echo, WdfIoQueueCreate failed 0x%x\n",status);
         return status;
     }
 
-    // Get our Driver Context memory from the returned Queue handle
+    // Get our Driver Context memory from the returned queue handle
     // 从返回的队列句柄获取我们的驱动程序上下文内存
     queueContext = QueueGetContext(queue);
     queueContext->WriteMemory = NULL;
@@ -121,12 +121,12 @@ NTSTATUS EchoQueueInitialize(WDFDEVICE Device)
     queueContext->CurrentStatus = STATUS_INVALID_DEVICE_REQUEST;
 
     //
-    // Create the Queue timer
+    // Create the queue timer
     // 创建队列计时器
     //
     status = EchoTimerCreate(&queueContext->Timer, queue);
     if (!NT_SUCCESS(status)) {
-        LOG("Error creating timer 0x%x\n",status);
+        LOG("Echo, Error creating timer 0x%x\n",status);
         return status;
     }
 
@@ -148,14 +148,14 @@ Routine Description:
 
 Arguments:
 
-    Queue -  Handle to the framework queue object that is associated with the
+    queue -  Handle to the framework queue object that is associated with the
              I/O request.
              处理与I/O请求关联的框架队列对象
 
-    Request - Handle to a framework request object.
+    request - Handle to a framework request object.
               框架请求对象句柄
 
-    Length  - number of bytes to be read.
+    length  - number of bytes to be read.
               The default property of the queue is to not dispatch
               zero lenght read & write requests to the driver and
               complete is with status success. So we will never get
@@ -169,28 +169,28 @@ Return Value:
     VOID
 */
 VOID EchoEvtIoRead(
-    IN WDFQUEUE   Queue,
-    IN WDFREQUEST Request,
-    IN size_t     Length
+    IN WDFQUEUE   queue,
+    IN WDFREQUEST request,
+    IN size_t     length
 )
 {
-    LOG("EchoEvtIoRead\n");
+    LOG("Echo, EchoEvtIoRead\n");
 
-    NTSTATUS Status;
-    PQUEUE_CONTEXT queueContext = QueueGetContext(Queue);
+    NTSTATUS status;
+    PQUEUE_CONTEXT queueContext = QueueGetContext(queue);
     WDFMEMORY memory;
     size_t writeMemoryLength;
 
-    _Analysis_assume_(Length > 0);
+    _Analysis_assume_(length > 0);
 
-    LOG("EchoEvtIoRead Called! Queue 0x%p, Request 0x%p Length %d\n",
-        Queue, Request, Length);
+    LOG("Echo, EchoEvtIoRead Called! Queue 0x%p, Request 0x%p Length %d\n",
+        queue, request, length);
     //
     // No data to read
     // 没有数据可读取
     //
     if ((queueContext->WriteMemory == NULL)) {
-        WdfRequestCompleteWithInformation(Request, STATUS_SUCCESS, (ULONG_PTR)0L);
+        WdfRequestCompleteWithInformation(request, STATUS_SUCCESS, (ULONG_PTR)0L);
         return;
     }
 
@@ -201,48 +201,48 @@ VOID EchoEvtIoRead(
     WdfMemoryGetBuffer(queueContext->WriteMemory, &writeMemoryLength);
     _Analysis_assume_(writeMemoryLength > 0);
 
-    if (writeMemoryLength < Length) {
-        Length = writeMemoryLength;
+    if (writeMemoryLength < length) {
+        length = writeMemoryLength;
     }
 
     //
     // Get the request memory
     // 获取请求内存
     //
-    Status = WdfRequestRetrieveOutputMemory(Request, &memory);
-    if (!NT_SUCCESS(Status)) {
-        LOG("EchoEvtIoRead Could not get request memory buffer 0x%x\n", Status);
+    status = WdfRequestRetrieveOutputMemory(request, &memory);
+    if (!NT_SUCCESS(status)) {
+        LOG("Echo, EchoEvtIoRead Could not get request memory buffer 0x%x\n", status);
         WdfVerifierDbgBreakPoint();
-        WdfRequestCompleteWithInformation(Request, Status, 0L);
+        WdfRequestCompleteWithInformation(request, status, 0L);
 
         return;
     }
 
     // Copy the memory out
     // 复制内存
-    Status = WdfMemoryCopyFromBuffer(memory,    // destination
+    status = WdfMemoryCopyFromBuffer(memory,    // destination
         0,         // offset into the destination memory
         WdfMemoryGetBuffer(queueContext->WriteMemory, NULL),
-        Length
+        length
     );
-    if (!NT_SUCCESS(Status)) {
-        LOG("EchoEvtIoRead: WdfMemoryCopyFromBuffer failed 0x%x\n", Status);
-        WdfRequestComplete(Request, Status);
+    if (!NT_SUCCESS(status)) {
+        LOG("Echo, EchoEvtIoRead: WdfMemoryCopyFromBuffer failed 0x%x\n", status);
+        WdfRequestComplete(request, status);
         return;
     }
 
     // Set transfer information
     // 设置传输信息
-    WdfRequestSetInformation(Request, (ULONG_PTR)Length);
+    WdfRequestSetInformation(request, (ULONG_PTR)length);
 
     // Mark the request is cancelable
     // 将请求标记为可取消
-    WdfRequestMarkCancelable(Request, EchoEvtRequestCancel);
+    WdfRequestMarkCancelable(request, EchoEvtRequestCancel);
 
     // Defer the completion to another thread from the timer dpc
     // 将完成时间从计时器dpc推迟到另一个线程
-    queueContext->CurrentRequest = Request;
-    queueContext->CurrentStatus = Status;
+    queueContext->CurrentRequest = request;
+    queueContext->CurrentStatus = status;
 
     return;
 }
@@ -265,13 +265,13 @@ Routine Description:
 
 Arguments:
 
-    Queue -  Handle to the framework queue object that is associated with the I/O request.
+    queue -  Handle to the framework queue object that is associated with the I/O request.
              与I/O请求相关的框架队列对象句柄
 
-    Request - Handle to a framework request object.
+    request - Handle to a framework request object.
               框架请求对象句柄
 
-    Length  - number of bytes to be read.
+    length  - number of bytes to be read.
               The default property of the queue is to not dispatch
               zero lenght read & write requests to the driver and
               complete is with status success. So we will never get
@@ -285,38 +285,38 @@ Return Value:
     VOID
 */
 VOID EchoEvtIoWrite(
-    IN WDFQUEUE   Queue,
-    IN WDFREQUEST Request,
-    IN size_t     Length
+    IN WDFQUEUE   queue,
+    IN WDFREQUEST request,
+    IN size_t     length
 )
 {
-    LOG("EchoEvtIoWrite\n");
+    LOG("Echo, EchoEvtIoWrite\n");
 
     NTSTATUS Status;
     WDFMEMORY memory;
-    PQUEUE_CONTEXT queueContext = QueueGetContext(Queue);
+    PQUEUE_CONTEXT queueContext = QueueGetContext(queue);
     PVOID writeBuffer = NULL;
 
-    _Analysis_assume_(Length > 0);
+    _Analysis_assume_(length > 0);
 
-    LOG("EchoEvtIoWrite Called! Queue 0x%p, Request 0x%p Length %d\n",
-        Queue, Request, Length);
+    LOG("Echo, EchoEvtIoWrite Called! Queue 0x%p, Request 0x%p Length %d\n",
+        queue, request, length);
 
-    if (Length > MAX_WRITE_LENGTH) {
-        LOG("EchoEvtIoWrite Buffer Length to big %d, Max is %d\n",
-            Length, MAX_WRITE_LENGTH);
-        WdfRequestCompleteWithInformation(Request, STATUS_BUFFER_OVERFLOW, 0L);
+    if (length > MAX_WRITE_LENGTH) {
+        LOG("Echo, EchoEvtIoWrite Buffer Length to big %d, Max is %d\n",
+            length, MAX_WRITE_LENGTH);
+        WdfRequestCompleteWithInformation(request, STATUS_BUFFER_OVERFLOW, 0L);
         return;
     }
 
     // Get the memory buffer
     // 获取内存缓冲区
-    Status = WdfRequestRetrieveInputMemory(Request, &memory);
+    Status = WdfRequestRetrieveInputMemory(request, &memory);
     if (!NT_SUCCESS(Status)) {
-        LOG("EchoEvtIoWrite Could not get request memory buffer 0x%x\n",
+        LOG("Echo, EchoEvtIoWrite Could not get request memory buffer 0x%x\n",
             Status);
         WdfVerifierDbgBreakPoint();
-        WdfRequestComplete(Request, Status);
+        WdfRequestComplete(request, Status);
         return;
     }
 
@@ -330,14 +330,14 @@ VOID EchoEvtIoWrite(
     Status = WdfMemoryCreate(WDF_NO_OBJECT_ATTRIBUTES,
         NonPagedPoolNx,
         'sam1',
-        Length,
+        length,
         &queueContext->WriteMemory,
         &writeBuffer
     );
 
     if (!NT_SUCCESS(Status)) {
-        LOG("EchoEvtIoWrite: Could not allocate %d byte buffer\n", Length);
-        WdfRequestComplete(Request, STATUS_INSUFFICIENT_RESOURCES);
+        LOG("Echo, EchoEvtIoWrite: Could not allocate %d byte buffer\n", length);
+        WdfRequestComplete(request, STATUS_INSUFFICIENT_RESOURCES);
         return;
     }
 
@@ -346,63 +346,63 @@ VOID EchoEvtIoWrite(
     Status = WdfMemoryCopyToBuffer(memory,
         0,  // offset into the source memory
         writeBuffer,
-        Length);
+        length);
     if (!NT_SUCCESS(Status)) {
-        LOG("EchoEvtIoWrite WdfMemoryCopyToBuffer failed 0x%x\n", Status);
+        LOG("Echo, EchoEvtIoWrite WdfMemoryCopyToBuffer failed 0x%x\n", Status);
         WdfVerifierDbgBreakPoint();
 
         WdfObjectDelete(queueContext->WriteMemory);
         queueContext->WriteMemory = NULL;
 
-        WdfRequestComplete(Request, Status);
+        WdfRequestComplete(request, Status);
         return;
     }
 
     // Set transfer information
     // 设置传输信息
-    WdfRequestSetInformation(Request, (ULONG_PTR)Length);
+    WdfRequestSetInformation(request, (ULONG_PTR)length);
 
     // Specify the request is cancelable
     // 指定请求可取消
-    WdfRequestMarkCancelable(Request, EchoEvtRequestCancel);
+    WdfRequestMarkCancelable(request, EchoEvtRequestCancel);
 
     // Defer the completion to another thread from the timer dpc
     // 将完成时间从计时器dpc推迟到另一个线程
-    queueContext->CurrentRequest = Request;
+    queueContext->CurrentRequest = request;
     queueContext->CurrentStatus = Status;
 
     return;
 }
 
 VOID EvtIoDeviceControl(
-    IN WDFQUEUE   Queue,
-    IN WDFREQUEST Request,
-    IN size_t     OutputBufferLength,
-    IN size_t     InputBufferLength,
-    IN ULONG      IoControlCode
+    IN WDFQUEUE   queue,
+    IN WDFREQUEST request,
+    IN size_t     outputBufferLength,
+    IN size_t     inputBufferLength,
+    IN ULONG      ioControlCode
 )
 {
-    LOG("EvtIoDeviceControl\n");
+    LOG("Echo, EvtIoDeviceControl\n");
 
-    UNREFERENCED_PARAMETER(Queue);
-    UNREFERENCED_PARAMETER(OutputBufferLength);
-    UNREFERENCED_PARAMETER(InputBufferLength);
+    UNREFERENCED_PARAMETER(queue);
+    UNREFERENCED_PARAMETER(outputBufferLength);
+    UNREFERENCED_PARAMETER(inputBufferLength);
 
     NTSTATUS  status;
     PAGED_CODE();
 
-    switch (IoControlCode)
+    switch (ioControlCode)
     {
         case IOCTL_CODE_TEST:
-            LOG("EvtIoDeviceControl, IOCTL_CODE_TEST\n");
+            LOG("Echo, EvtIoDeviceControl, IOCTL_CODE_TEST\n");
             status = STATUS_SUCCESS;
-            WdfRequestCompleteWithInformation(Request, status, 0);
+            WdfRequestCompleteWithInformation(request, status, 0);
             break;
 
         default:
-            LOG("EvtIoDeviceControl, STATUS_INVALID_DEVICE_REQUEST\n");
+            LOG("Echo, EvtIoDeviceControl, STATUS_INVALID_DEVICE_REQUEST\n");
             status = STATUS_INVALID_DEVICE_REQUEST;
-            WdfRequestCompleteWithInformation(Request, status, 0);
+            WdfRequestCompleteWithInformation(request, status, 0);
             break;
     }
 
@@ -418,45 +418,45 @@ Routine Description:
 
     Called when an I/O request is cancelled after the driver has marked
     the request cancellable. This callback is automatically synchronized
-    with the I/O callbacks since we have chosen to use frameworks Device
+    with the I/O callbacks since we have chosen to use frameworks device
     level locking.
     在驱动程序标记请求可取消后取消I/O请求时调用。由于我们选择使用框架设备
     级别锁定，因此该回调将与I/O回调自动同步。
 
 Arguments:
 
-    Request - Request being cancelled.
+    request - request being cancelled.
               请求被取消
 
 Return Value:
 
     VOID
 */
-VOID EchoEvtRequestCancel(IN WDFREQUEST Request)
+VOID EchoEvtRequestCancel(IN WDFREQUEST request)
 {
-    LOG("EchoEvtRequestCancel\n");
+    LOG("Echo, EchoEvtRequestCancel\n");
 
-    PQUEUE_CONTEXT queueContext = QueueGetContext(WdfRequestGetIoQueue(Request));
+    PQUEUE_CONTEXT queueContext = QueueGetContext(WdfRequestGetIoQueue(request));
 
-    LOG("EchoEvtRequestCancel called on Request 0x%p\n", Request);
+    LOG("Echo, EchoEvtRequestCancel called on Request 0x%p\n", request);
 
     //
     // The following is race free by the callside or DPC side
     // synchronizing completion by calling
-    // WdfRequestMarkCancelable(Queue, Request, FALSE) before
+    // WdfRequestMarkCancelable(queue, request, FALSE) before
     // completion and not calling WdfRequestComplete if the
     // return status == STATUS_CANCELLED.
     // 通过在完成之前调用WdfRequestMarkCancelable（Queue，Request，FALSE），
     // 并且在返回状态== STATUS_CANCELLED的情况下，不调用WdfRequestComplete，
     // 由调用方或DPC同步同步完成的下列操作是免费的。
     //
-    WdfRequestCompleteWithInformation(Request, STATUS_CANCELLED, 0L);
+    WdfRequestCompleteWithInformation(request, STATUS_CANCELLED, 0L);
 
     //
     // This book keeping is synchronized by the common
-    // Queue presentation lock
+    // queue presentation lock
     //
-    ASSERT(queueContext->CurrentRequest == Request);
+    ASSERT(queueContext->CurrentRequest == request);
     queueContext->CurrentRequest = NULL;
 
     return;
@@ -469,7 +469,7 @@ Function:
 
 Routine Description:
 
-    This is called when the Queue that our driver context memory
+    This is called when the queue that our driver context memory
     is associated with is destroyed.
     当与我们的驱动程序上下文存储器关联的队列被销毁时，将调用此方法。
 
@@ -482,11 +482,11 @@ Return Value:
 
     VOID
 */
-VOID EchoEvtIoQueueContextDestroy(WDFOBJECT Object)
+VOID EchoEvtIoQueueContextDestroy(WDFOBJECT object)
 {
-    LOG("EchoEvtIoQueueContextDestroy\n");
+    LOG("Echo, EchoEvtIoQueueContextDestroy\n");
 
-    PQUEUE_CONTEXT queueContext = QueueGetContext(Object);
+    PQUEUE_CONTEXT queueContext = QueueGetContext(object);
 
     //
     // Release any resources pointed to in the queue context.
@@ -498,7 +498,7 @@ VOID EchoEvtIoQueueContextDestroy(WDFOBJECT Object)
     //
 
     //
-    // If Queue context has an I/O buffer, release it
+    // If queue context has an I/O buffer, release it
     // 如果队列上下文具有I/O缓冲区，请释放它
     //
     if (queueContext->WriteMemory != NULL) {
@@ -533,11 +533,11 @@ Return Value:
 	NTSTATUS
 */
 NTSTATUS EchoTimerCreate(
-    IN WDFTIMER*       Timer,
-    IN WDFQUEUE        Queue
+    IN WDFTIMER*       timer,
+    IN WDFQUEUE        queue
     )
 {
-    LOG("EchoTimerCreate\n");
+    LOG("Echo, EchoTimerCreate\n");
 
     NTSTATUS Status;
     WDF_TIMER_CONFIG       timerConfig;
@@ -556,14 +556,14 @@ NTSTATUS EchoTimerCreate(
     WDF_TIMER_CONFIG_INIT(&timerConfig, EchoEvtTimerFunc);
 
     WDF_OBJECT_ATTRIBUTES_INIT(&timerAttributes);
-    timerAttributes.ParentObject = Queue; // Synchronize with the I/O Queue
+    timerAttributes.ParentObject = queue; // Synchronize with the I/O queue
                                           // 与I/O队列同步
     timerAttributes.ExecutionLevel = WdfExecutionLevelPassive;
 
     Status = WdfTimerCreate(
         &timerConfig,
         &timerAttributes,
-        Timer     // Output handle
+        timer     // Output handle
     );
 
     return Status;
@@ -578,34 +578,34 @@ Routine Description:
 
     This is the TimerDPC the driver sets up to complete requests.
     This function is registered when the WDFTIMER object is created, and
-    will automatically synchronize with the I/O Queue callbacks
+    will automatically synchronize with the I/O queue callbacks
     and cancel routine.
     这是驱动程序设置为完成请求的TimerDPC。创建WDFTIMER对象时将注册此函数，
     该函数将自动与I/O队列回调和取消例程同步。
 
 Arguments:
 
-    Timer - Handle to a framework Timer object.
+    timer - Handle to a framework timer object.
             框架Timer对象句柄
 
 Return Value:
 
 	VOID
 */
-VOID EchoEvtTimerFunc(IN WDFTIMER  Timer)
+VOID EchoEvtTimerFunc(IN WDFTIMER timer)
 {
-    LOG("EchoEvtTimerFunc\n");
+    LOG("Echo, EchoEvtTimerFunc\n");
 
     NTSTATUS    Status;
     WDFREQUEST  Request;
     WDFQUEUE  queue;
     PQUEUE_CONTEXT  queueContext;
 
-    queue = WdfTimerGetParentObject(Timer);
+    queue = WdfTimerGetParentObject(timer);
     queueContext = QueueGetContext(queue);
 
     //
-    // DPC is automatically synchronized to the Queue lock,
+    // DPC is automatically synchronized to the queue lock,
     // so this is race free without explicit driver managed locking.
     // DPC会自动同步到队列锁，因此无需明确的驱动程序管理的锁，它就不会出现冲突。
     //
@@ -628,21 +628,21 @@ VOID EchoEvtTimerFunc(IN WDFTIMER  Timer)
             queueContext->CurrentRequest = NULL;
             Status = queueContext->CurrentStatus;
 
-            LOG("CustomTimerDPC Completing request 0x%p, Status 0x%x \n", Request, Status);
+            LOG("Echo, CustomTimerDPC Completing request 0x%p, Status 0x%x \n", Request, Status);
 
             WdfRequestComplete(Request, Status);
         }
         else {
-            LOG("CustomTimerDPC Request 0x%p is STATUS_CANCELLED, not completing\n", Request);
+            LOG("Echo, CustomTimerDPC Request 0x%p is STATUS_CANCELLED, not completing\n", Request);
         }
     }
 
     //
-    // Restart the Timer since WDF does not allow periodic timer
+    // Restart the timer since WDF does not allow periodic timer
     // with autosynchronization at passive level
     // 由于WDF不允许周期性计时器在被动级别进行自动同步，因此重新启动计时器
     //
-    WdfTimerStart(Timer, WDF_REL_TIMEOUT_IN_MS(TIMER_PERIOD));
+    WdfTimerStart(timer, WDF_REL_TIMEOUT_IN_MS(TIMER_PERIOD));
 
     return;
 }

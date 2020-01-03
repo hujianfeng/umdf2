@@ -4,7 +4,7 @@ Copyright (c) 1990-2000  Microsoft Corporation
 
 Module Name:
 
-    device.c - Device handling events for example driver.
+    device.c - device handling events for example driver.
                驱动程序示例的设备处理事件
 
 Abstract:
@@ -42,7 +42,7 @@ Routine Description:
 
 Arguments:
 
-	DeviceInit - Pointer to an opaque init structure. Memory for this
+	deviceInit - Pointer to an opaque init structure. Memory for this
 				 structure will be freed by the framework when the WdfDeviceCreate
 				 succeeds. So don't access the structure after that point.
 				 指向不透明初始化结构的指针。 WdfDeviceCreate成功后，框架将释放此结构的内存。
@@ -52,9 +52,9 @@ Return Value:
 
 	NTSTATUS
 */
-NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
+NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT deviceInit)
 {
-    LOG("EchoDeviceCreate\n");
+    LOG("Echo, EchoDeviceCreate\n");
 
     WDF_OBJECT_ATTRIBUTES deviceAttributes;
     PDEVICE_CONTEXT deviceContext;
@@ -80,14 +80,14 @@ NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
     // later in SotwareInit.
     // 注册 PNP/POWER 回调。 电源策略相关的回调将稍后在SotwareInit中注册。
     //
-    WdfDeviceInitSetPnpPowerEventCallbacks(DeviceInit, &pnpPowerCallbacks);
+    WdfDeviceInitSetPnpPowerEventCallbacks(deviceInit, &pnpPowerCallbacks);
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
 
-    LOG("WdfDeviceCreate\n");
+    LOG("Echo, WdfDeviceCreate\n");
 
     // 创建框架设备对象
-    status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
+    status = WdfDeviceCreate(&deviceInit, &deviceAttributes, &device);
 
     if (NT_SUCCESS(status)) {
         //
@@ -106,7 +106,7 @@ NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit)
         // Create a device interface so that application can find and talk to us.
 		// 创建一个设备接口，以便应用程序可以找到我们并与我们交谈。
         //
-        LOG("WdfDeviceCreateDeviceInterface\n");
+        LOG("Echo, WdfDeviceCreateDeviceInterface\n");
         status = WdfDeviceCreateDeviceInterface(
             device,
             &GUID_DEVINTERFACE_ECHO,
@@ -147,7 +147,7 @@ Routine Description:
 
 Arguments:
 
-	Device - Handle to a framework device object.
+	device - Handle to a framework device object.
 	         处理框架设备对象。
 
 Return Value:
@@ -155,11 +155,11 @@ Return Value:
 	NTSTATUS - Failures will result in the device stack being torn down.
 	           故障将导致设备堆栈被拆除。
 */
-NTSTATUS EchoEvtDeviceSelfManagedIoStart(IN  WDFDEVICE Device)
+NTSTATUS EchoEvtDeviceSelfManagedIoStart(IN WDFDEVICE device)
 {
-    LOG("EchoEvtDeviceSelfManagedIoStart\n");
+    LOG("Echo, EchoEvtDeviceSelfManagedIoStart\n");
 
-    PQUEUE_CONTEXT queueContext = QueueGetContext(WdfDeviceGetDefaultQueue(Device));
+    PQUEUE_CONTEXT queueContext = QueueGetContext(WdfDeviceGetDefaultQueue(device));
     LARGE_INTEGER DueTime;
 
     //
@@ -167,12 +167,12 @@ NTSTATUS EchoEvtDeviceSelfManagedIoStart(IN  WDFDEVICE Device)
     // into low power state.
     // 重新启动队列和定期计时器。 进入低功耗状态之前，我们已将其停止。
     //
-    LOG("WdfIoQueueStart\n");
-    WdfIoQueueStart(WdfDeviceGetDefaultQueue(Device));
+    LOG("Echo, WdfIoQueueStart\n");
+    WdfIoQueueStart(WdfDeviceGetDefaultQueue(device));
 
     DueTime.QuadPart = WDF_REL_TIMEOUT_IN_MS(100);
 
-    LOG("WdfTimerStart\n");
+    LOG("Echo, WdfTimerStart\n");
     WdfTimerStart(queueContext->Timer,  DueTime.QuadPart);
 
     return STATUS_SUCCESS;
@@ -192,7 +192,7 @@ Routine Description:
 
 Arguments:
 
-	Device - Handle to a framework device object.
+	device - Handle to a framework device object.
 	         处理框架设备对象。
 
 Return Value:
@@ -201,11 +201,11 @@ Return Value:
 	           device stack will be torn down.
 	           不允许驱动程序使此功能失败。 如果是这样，设备堆栈将被拆除。
 */
-NTSTATUS EchoEvtDeviceSelfManagedIoSuspend(IN  WDFDEVICE Device)
+NTSTATUS EchoEvtDeviceSelfManagedIoSuspend(IN WDFDEVICE device)
 {
-    LOG("EchoEvtDeviceSelfManagedIoSuspend\n");
+    LOG("Echo, EchoEvtDeviceSelfManagedIoSuspend\n");
 
-    PQUEUE_CONTEXT queueContext = QueueGetContext(WdfDeviceGetDefaultQueue(Device));
+    PQUEUE_CONTEXT queueContext = QueueGetContext(WdfDeviceGetDefaultQueue(device));
 
     PAGED_CODE();
 
@@ -225,14 +225,14 @@ NTSTATUS EchoEvtDeviceSelfManagedIoSuspend(IN  WDFDEVICE Device)
     // 2）在队列上注册EvtIoStop回调，并确认该请求以通知框架可以使用未完成的 I/O挂起设备。
     //    在此示例中，我们将使用第一种方法，因为它很容易做到。 重新启动设备后，我们将重新启动队列。
     //
-    LOG("WdfIoQueueStopSynchronously\n");
-    WdfIoQueueStopSynchronously(WdfDeviceGetDefaultQueue(Device));
+    LOG("Echo, WdfIoQueueStopSynchronously\n");
+    WdfIoQueueStopSynchronously(WdfDeviceGetDefaultQueue(device));
 
     //
     // Stop the watchdog timer and wait for DPC to run to completion if it's already fired.
     // 停止看门狗计时器，并等待DPC运行完毕（如果已启动）。
     //
-    LOG("WdfTimerStop\n");
+    LOG("Echo, WdfTimerStop\n");
     WdfTimerStop(queueContext->Timer, TRUE);
 
     return STATUS_SUCCESS;

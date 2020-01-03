@@ -41,22 +41,22 @@ _Analysis_mode_(_Analysis_code_type_user_code_)
 
 #define IOCTL_CODE_TEST CTL_CODE(FILE_DEVICE_UNKNOWN, 0x800, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
-BOOLEAN G_PerformAsyncIo;      // 是否使用异步I/O
-BOOLEAN G_LimitedLoops;        // 是否有限循环
-ULONG G_AsyncIoLoopsNum;       // 异步循环次数
-WCHAR G_DevicePath[MAX_DEVPATH_LENGTH];
+BOOLEAN G_bPerformAsyncIo;        // 是否使用异步I/O
+BOOLEAN G_bLimitedLoops;          // 是否有限循环
+ULONG   G_nAsyncIoLoopsNum;       // 异步循环次数
+WCHAR   G_szDevicePath[MAX_DEVPATH_LENGTH];
 
-ULONG AsyncIo(PVOID  ThreadParameter);
+ULONG AsyncIo(PVOID threadParameter);
 
 BOOLEAN PerformWriteReadTest(
     IN HANDLE hDevice,
-    IN ULONG TestLength
+    IN ULONG  testLength
     );
 
 BOOL GetDevicePath(
-    IN  LPGUID InterfaceGuid,
-    _Out_writes_(BufLen) PWCHAR DevicePath,
-    _In_ size_t BufLen
+    IN  LPGUID interfaceGuid,
+    _Out_writes_(bufLen) PWCHAR devicePath,
+    _In_ size_t bufLen
     );
 
 #define LOG printf
@@ -74,13 +74,13 @@ int __cdecl main(_In_ int argc, _In_reads_(argc) char* argv[])
 
     if (argc > 1)  {
         if(!_strnicmp (argv[1], "-Async", 6) ) {
-            G_PerformAsyncIo = TRUE;
+            G_bPerformAsyncIo = TRUE;
             if (argc > 2) {
-                G_AsyncIoLoopsNum = atoi(argv[2]);
-                G_LimitedLoops = TRUE;
+                G_nAsyncIoLoopsNum = atoi(argv[2]);
+                G_bLimitedLoops = TRUE;
             }
             else {
-                G_LimitedLoops = FALSE;
+                G_bLimitedLoops = FALSE;
             }
         }
         else {
@@ -99,19 +99,19 @@ int __cdecl main(_In_ int argc, _In_reads_(argc) char* argv[])
     //
     if ( !GetDevicePath(
             (LPGUID) &GUID_DEVINTERFACE_ECHO,
-            G_DevicePath,
-            sizeof(G_DevicePath)/sizeof(G_DevicePath[0])) )
+            G_szDevicePath,
+            sizeof(G_szDevicePath)/sizeof(G_szDevicePath[0])) )
     {
         result = FALSE;
         goto exit;
     }
 
-    LOG("DevicePath: %ws\n", G_DevicePath);
+    LOG("DevicePath: %ws\n", G_szDevicePath);
 
     //
     // 建立驱动设备
     //
-    hDevice = CreateFile(G_DevicePath,
+    hDevice = CreateFile(G_szDevicePath,
                          GENERIC_READ|GENERIC_WRITE,
                          FILE_SHARE_READ | FILE_SHARE_WRITE,
                          NULL,
@@ -121,13 +121,15 @@ int __cdecl main(_In_ int argc, _In_reads_(argc) char* argv[])
 
     if (hDevice == INVALID_HANDLE_VALUE) {
         LOG("Failed to open device. Error %d\n",GetLastError());
+        OutputDebugStringA("Failed to open device. Error\n");
         result = FALSE;
         goto exit;
     }
 
     LOG("Opened device successfully\n");
+    OutputDebugStringA("Opened device successfully\n");
 
-    if(G_PerformAsyncIo) {
+    if(G_bPerformAsyncIo) {
 
         LOG("Starting AsyncIo\n");
 
@@ -190,21 +192,21 @@ exit:
 //
 // 创建模拟缓冲区
 //
-PUCHAR CreatePatternBuffer(IN ULONG Length)
+PUCHAR CreatePatternBuffer(IN ULONG length)
 {
     unsigned int i;
     PUCHAR p, pBuf;
 
-    pBuf = (PUCHAR)malloc(Length);
+    pBuf = (PUCHAR)malloc(length);
     if( pBuf == NULL ) {
-        LOG("Could not allocate %d byte buffer\n",Length);
+        LOG("Could not allocate %d byte buffer\n",length);
         return NULL;
     }
 
     p = pBuf;
 
     // 在缓冲区中写入内容
-    for(i=0; i < Length; i++ ) {
+    for(i=0; i < length; i++ ) {
         *p = (UCHAR)i;
         p++;
     }
@@ -216,13 +218,13 @@ PUCHAR CreatePatternBuffer(IN ULONG Length)
 // 验证模拟缓冲区
 //
 BOOLEAN VerifyPatternBuffer(
-	_In_reads_bytes_(Length) PUCHAR pBuffer,
-	_In_ ULONG Length)
+	_In_reads_bytes_(length) PUCHAR pBuffer,
+	_In_ ULONG length)
 {
     unsigned int i;
     PUCHAR p = pBuffer;
 
-    for( i=0; i < Length; i++ ) {
+    for( i=0; i < length; i++ ) {
 
         if( *p != (UCHAR)(i & 0xFF) ) {
             LOG("Pattern changed. SB 0x%x, Is 0x%x\n",
@@ -241,28 +243,28 @@ BOOLEAN VerifyPatternBuffer(
 //
 BOOLEAN PerformWriteReadTest(
     IN HANDLE hDevice,
-    IN ULONG TestLength
+    IN ULONG length
     )
 {
     ULONG  bytesReturned =0;
-    PUCHAR WriteBuffer = NULL,
-           ReadBuffer = NULL;
+    PUCHAR writeBuffer = NULL,
+           readBuffer = NULL;
     BOOLEAN result = TRUE;
 
     // 建立写缓冲区
-    WriteBuffer = CreatePatternBuffer(TestLength);
-    if( WriteBuffer == NULL ) {
+    writeBuffer = CreatePatternBuffer(length);
+    if( writeBuffer == NULL ) {
 
         result = FALSE;
         goto Cleanup;
     }
 
     // 建立读缓冲区
-    ReadBuffer = (PUCHAR)malloc(TestLength);
-    if( ReadBuffer == NULL ) {
+    readBuffer = (PUCHAR)malloc(length);
+    if( readBuffer == NULL ) {
 
         LOG("PerformWriteReadTest: Could not allocate %d "
-               "bytes ReadBuffer\n",TestLength);
+               "bytes ReadBuffer\n",length);
 
          result = FALSE;
          goto Cleanup;
@@ -273,8 +275,8 @@ BOOLEAN PerformWriteReadTest(
     bytesReturned = 0;
 
     if (!WriteFile (hDevice,
-            WriteBuffer,
-            TestLength,
+            writeBuffer,
+            length,
             &bytesReturned,
             NULL)) {
 
@@ -287,10 +289,10 @@ BOOLEAN PerformWriteReadTest(
     }
     else {
 
-        if( bytesReturned != TestLength ) {
+        if( bytesReturned != length ) {
 
             LOG("bytes written is not test length! Written %d, "
-                   "SB %d\n",bytesReturned, TestLength);
+                   "SB %d\n",bytesReturned, length);
 
             result = FALSE;
             goto Cleanup;
@@ -304,8 +306,8 @@ BOOLEAN PerformWriteReadTest(
 
     // 从驱动设备读取数据到读缓冲区
     if ( !ReadFile (hDevice,
-            ReadBuffer,
-            TestLength,
+            readBuffer,
+            length,
             &bytesReturned,
             NULL)) {
 
@@ -318,10 +320,10 @@ BOOLEAN PerformWriteReadTest(
     }
     else {
 
-        if( bytesReturned != TestLength ) {
+        if( bytesReturned != length ) {
 
             LOG("bytes Read is not test length! Read %d, "
-                   "SB %d\n",bytesReturned, TestLength);
+                   "SB %d\n",bytesReturned, length);
 
              //
              // Note: Is this a Failure Case??
@@ -335,7 +337,7 @@ BOOLEAN PerformWriteReadTest(
     }
 
     // 验证读取的数据是否与模拟一致
-    if( !VerifyPatternBuffer(ReadBuffer, TestLength) ) {
+    if( !VerifyPatternBuffer(readBuffer, length) ) {
 
         LOG("Verify failed\n");
 
@@ -345,8 +347,10 @@ BOOLEAN PerformWriteReadTest(
 
     LOG("Pattern Verified successfully\n");
 
+    // IOCONTROL测试
     ULONG nOutput = 0;
-    if (!DeviceIoControl(hDevice,
+    if (!DeviceIoControl(
+        hDevice,
         IOCTL_CODE_TEST,
         NULL,
         0,
@@ -357,24 +361,27 @@ BOOLEAN PerformWriteReadTest(
         )
     {
         printf("ERROR: DeviceIoControl returns %0x.", GetLastError());
+
+        result = FALSE;
+        goto Cleanup;
     }
 
 Cleanup:
 
     //
-    // Free WriteBuffer if non NULL.
+    // Free writeBuffer if non NULL.
     // 如果非NULL，则释放WriteBuffer。
     //
-    if (WriteBuffer) {
-        free (WriteBuffer);
+    if (writeBuffer) {
+        free (writeBuffer);
     }
 
     //
-    // Free ReadBuffer if non NULL
+    // Free readBuffer if non NULL
     // 如果非NULL，则释放ReadBuffer
     //
-    if (ReadBuffer) {
-        free (ReadBuffer);
+    if (readBuffer) {
+        free (readBuffer);
     }
 
     return result;
@@ -383,17 +390,17 @@ Cleanup:
 //
 // 异步IO
 //
-ULONG AsyncIo(PVOID ThreadParameter)
+ULONG AsyncIo(PVOID threadParameter)
 {
     HANDLE hDevice = INVALID_HANDLE_VALUE;
     HANDLE hCompletionPort = NULL;
     OVERLAPPED *pOvList = NULL;
-    PUCHAR      buf = NULL;
-    ULONG     numberOfBytesTransferred;
+    PUCHAR     buf = NULL;
+    ULONG      numberOfBytesTransferred;
     OVERLAPPED *completedOv;
-    ULONG_PTR    i;
-    ULONG   ioType = (ULONG)(ULONG_PTR)ThreadParameter;
-    ULONG_PTR   key;
+    ULONG_PTR  i;
+    ULONG      ioType = (ULONG)(ULONG_PTR)threadParameter;
+    ULONG_PTR  key;
     ULONG   error;
     BOOLEAN result = TRUE;
     ULONG maxPendingRequests = NUM_ASYNCH_IO;
@@ -401,7 +408,7 @@ ULONG AsyncIo(PVOID ThreadParameter)
     ULONG remainingRequestsToReceive = 0;
 
     // 建立驱动设备
-    hDevice = CreateFile(G_DevicePath,
+    hDevice = CreateFile(G_szDevicePath,
                      GENERIC_WRITE|GENERIC_READ,
                      FILE_SHARE_READ | FILE_SHARE_WRITE,
                      NULL,
@@ -411,7 +418,7 @@ ULONG AsyncIo(PVOID ThreadParameter)
 
 
     if (hDevice == INVALID_HANDLE_VALUE) {
-        LOG("Cannot open %ws error %d\n", G_DevicePath, GetLastError());
+        LOG("Cannot open %ws error %d\n", G_szDevicePath, GetLastError());
         result = FALSE;
         goto Error;
     }
@@ -426,23 +433,23 @@ ULONG AsyncIo(PVOID ThreadParameter)
     }
 
     //
-    // We will only have NUM_ASYNCH_IO or G_AsyncIoLoopsNum pending at any
+    // We will only have NUM_ASYNCH_IO or G_nAsyncIoLoopsNum pending at any
     // time (whichever is less)
     // 任何时候我们只会有NUM_ASYNCH_IO或G_AsyncIoLoopsNum待处理（以较少者为准）
     //
-    if (G_LimitedLoops == TRUE) {
-        remainingRequestsToReceive = G_AsyncIoLoopsNum;
-        if (G_AsyncIoLoopsNum > NUM_ASYNCH_IO) {
+    if (G_bLimitedLoops == TRUE) {
+        remainingRequestsToReceive = G_nAsyncIoLoopsNum;
+        if (G_nAsyncIoLoopsNum > NUM_ASYNCH_IO) {
             //
             // After we send the initial NUM_ASYNCH_IO, we will have additional
-            // (G_AsyncIoLoopsNum - NUM_ASYNCH_IO) I/Os to send
+            // (G_nAsyncIoLoopsNum - NUM_ASYNCH_IO) I/Os to send
             // 发送初始的NUM_ASYNCH_IO后，我们将有其他（G_AsyncIoLoopsNum-NUM_ASYNCH_IO）个I/O发送
             //
             maxPendingRequests = NUM_ASYNCH_IO;
-            remainingRequestsToSend = G_AsyncIoLoopsNum - NUM_ASYNCH_IO;
+            remainingRequestsToSend = G_nAsyncIoLoopsNum - NUM_ASYNCH_IO;
         }
         else {
-            maxPendingRequests = G_AsyncIoLoopsNum;
+            maxPendingRequests = G_nAsyncIoLoopsNum;
             remainingRequestsToSend = 0;
         }
     }
@@ -529,7 +536,7 @@ ULONG AsyncIo(PVOID ThreadParameter)
             // If we're done with the I/Os, then exit
             // 如果我们完成了I/O，则退出
             //
-            if (G_LimitedLoops == TRUE) {
+            if (G_bLimitedLoops == TRUE) {
                 if ((--remainingRequestsToReceive) == 0) {
                     break;
                 }
@@ -565,7 +572,7 @@ ULONG AsyncIo(PVOID ThreadParameter)
             // If we're done with the I/Os, then exit
             // 如果我们完成了I/O，则退出
             //
-            if (G_LimitedLoops == TRUE) {
+            if (G_bLimitedLoops == TRUE) {
                 if ((--remainingRequestsToReceive) == 0) {
                     break;
                 }
@@ -618,9 +625,9 @@ Error:
 // 根据GUID获取设备路径
 //
 BOOL GetDevicePath(
-    _In_ LPGUID InterfaceGuid,
-    _Out_writes_(BufLen) PWCHAR DevicePath,
-    _In_ size_t BufLen
+    _In_ LPGUID interfaceGuid,
+    _Out_writes_(bufLen) PWCHAR devicePath,
+    _In_ size_t bufLen
     )
 {
     CONFIGRET cr = CR_SUCCESS;
@@ -632,7 +639,7 @@ BOOL GetDevicePath(
 
     cr = CM_Get_Device_Interface_List_Size(
                 &deviceInterfaceListLength,
-                InterfaceGuid,
+                interfaceGuid,
                 NULL,
                 CM_GET_DEVICE_INTERFACE_LIST_PRESENT);
     if (cr != CR_SUCCESS) {
@@ -655,7 +662,7 @@ BOOL GetDevicePath(
     ZeroMemory(deviceInterfaceList, deviceInterfaceListLength * sizeof(WCHAR));
 
     cr = CM_Get_Device_Interface_List(
-                InterfaceGuid,
+                interfaceGuid,
                 NULL,
                 deviceInterfaceList,
                 deviceInterfaceListLength,
@@ -671,7 +678,7 @@ BOOL GetDevicePath(
             "Selecting first matching device.\n\n");
     }
 
-    hr = StringCchCopy(DevicePath, BufLen, deviceInterfaceList);
+    hr = StringCchCopy(devicePath, bufLen, deviceInterfaceList);
     if (FAILED(hr)) {
         bRet = FALSE;
         LOG("Error: StringCchCopy failed with HRESULT 0x%x", hr);

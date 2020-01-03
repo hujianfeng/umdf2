@@ -61,19 +61,19 @@ Routine Description:
 
 Parameters Description:
 
-	DriverObject - represents the instance of the function driver that is loaded
-	into memory. DriverEntry must initialize members of DriverObject before it
-	returns to the caller. DriverObject is allocated by the system before the
+	driverObject - represents the instance of the function driver that is loaded
+	into memory. DriverEntry must initialize members of driverObject before it
+	returns to the caller. driverObject is allocated by the system before the
 	driver is loaded, and it is released by the system after the system unloads
 	the function driver from memory.
-	DriverObject - 表示已加载到内存中的功能驱动程序的实例。 
+	driverObject - 表示已加载到内存中的功能驱动程序的实例。 
 	DriverEntry在返回给调用者之前必须初始化DriverObject的成员。 
 	DriverObject在加载驱动程序之前由系统分配，并在系统从内存中卸载功能驱动程序后由系统释放。
 
-	RegistryPath - represents the driver specific path in the Registry.
+	registryPath - represents the driver specific path in the Registry.
 	The function driver can use the path to store driver related data between
 	reboots. The path does not store hardware instance specific data.
-	RegistryPath - 代表注册表中特定于驱动程序的路径。 
+	registryPath - 代表注册表中特定于驱动程序的路径。 
 	功能驱动程序可以使用路径在重新启动之间存储与驱动程序相关的数据。 
 	该路径不存储特定于硬件实例的数据。
 
@@ -84,11 +84,11 @@ Return Value:
 
 */
 NTSTATUS DriverEntry(
-	IN PDRIVER_OBJECT  DriverObject,
-	IN PUNICODE_STRING RegistryPath
+	IN PDRIVER_OBJECT  driverObject,
+	IN PUNICODE_STRING registryPath
 )
 {
-	LOG("DriverEntry\n");
+	LOG("Echo, DriverEntry\n");
 
 	WDF_DRIVER_CONFIG config;
 	NTSTATUS status;
@@ -99,17 +99,17 @@ NTSTATUS DriverEntry(
 		EchoEvtDeviceAdd
 	);
 
-	LOG("WdfDriverCreate\n");
+	LOG("Echo, WdfDriverCreate\n");
 
 	// 创建调用驱动程序框架的驱动程序对象
 	status = WdfDriverCreate(
-		DriverObject,
-		RegistryPath,
+		driverObject,
+		registryPath,
 		WDF_NO_OBJECT_ATTRIBUTES,
 		&config,
 		WDF_NO_HANDLE);
 	if (!NT_SUCCESS(status)) {
-		LOG("Error: WdfDriverCreate failed 0x%x\n", status);
+		LOG("Echo, Error: WdfDriverCreate failed 0x%x\n", status);
 		return status;
 	}
 
@@ -135,10 +135,10 @@ Routine Description:
 
 Arguments:
 
-	Driver - Handle to a framework driver object created in DriverEntry
+	driver - Handle to a framework driver object created in DriverEntry
 	         处理在DriverEntry中创建的框架驱动程序对象
 
-	DeviceInit - Pointer to a framework-allocated WDFDEVICE_INIT structure.
+	deviceInit - Pointer to a framework-allocated WDFDEVICE_INIT structure.
 	             指向框架分配的WDFDEVICE_INIT结构的指针。
 
 Return Value:
@@ -146,18 +146,18 @@ Return Value:
 	NTSTATUS
 */
 NTSTATUS EchoEvtDeviceAdd(
-	IN WDFDRIVER       Driver,
-	IN PWDFDEVICE_INIT DeviceInit
+	IN WDFDRIVER       driver,
+	IN PWDFDEVICE_INIT deviceInit
 )
 {
-	LOG("EchoEvtDeviceAdd\n");
+	LOG("Echo, EchoEvtDeviceAdd\n");
 
 	NTSTATUS status;
 
-	UNREFERENCED_PARAMETER(Driver);
+	UNREFERENCED_PARAMETER(driver);
 
 	// 回调函数主要调用了EchoDeviceCreate()
-	status = EchoDeviceCreate(DeviceInit);
+	status = EchoDeviceCreate(deviceInit);
 
 	return status;
 }
@@ -182,7 +182,7 @@ Return Value:
 */
 NTSTATUS EchoPrintDriverVersion( )
 {
-	LOG("EchoPrintDriverVersion\n");
+	LOG("Echo, EchoPrintDriverVersion\n");
 
 	NTSTATUS status;
 	WDFSTRING string;
@@ -195,7 +195,7 @@ NTSTATUS EchoPrintDriverVersion( )
 	//
 	status = WdfStringCreate(NULL, WDF_NO_OBJECT_ATTRIBUTES, &string);
 	if (!NT_SUCCESS(status)) {
-		LOG("Error: WdfStringCreate failed 0x%x\n", status);
+		LOG("Echo, Error: WdfStringCreate failed 0x%x\n", status);
 		return status;
 	}
 
@@ -209,12 +209,12 @@ NTSTATUS EchoPrintDriverVersion( )
 		// 无需担心删除字符串对象，因为默认情况下该字符串对象是驱动程序的父对象，
 		// 并且当DriverEntry返回失败状态时删除该driverObject时，它将被删除。
 		//
-		LOG("Error: WdfDriverRetrieveVersionString failed 0x%x\n", status);
+		LOG("Echo, Error: WdfDriverRetrieveVersionString failed 0x%x\n", status);
 		return status;
 	}
 
 	WdfStringGetUnicodeString(string, &us);
-	LOG("Echo Sample %wZ\n", &us);
+	LOG("Echo, Echo Sample %wZ\n", &us);
 
 	WdfObjectDelete(string);
 	string = NULL; // To avoid referencing a deleted object.
@@ -226,10 +226,10 @@ NTSTATUS EchoPrintDriverVersion( )
 	//
 	WDF_DRIVER_VERSION_AVAILABLE_PARAMS_INIT(&ver, 1, 0);
 	if (WdfDriverIsVersionAvailable(WdfGetDriver(), &ver) == TRUE) {
-		LOG("Yes, framework version is 1.0\n");
+		LOG("Echo, Yes, framework version is 1.0\n");
 	}
 	else {
-		LOG("No, framework verison is not 1.0\n");
+		LOG("Echo, No, framework verison is not 1.0\n");
 	}
 
 	return STATUS_SUCCESS;

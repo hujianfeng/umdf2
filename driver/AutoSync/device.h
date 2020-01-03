@@ -42,7 +42,7 @@ WDF_DECLARE_CONTEXT_TYPE(DEVICE_CONTEXT)
 // Function to initialize the device and its callbacks
 // 初始化设备及其回调的函数
 //
-NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT DeviceInit);
+NTSTATUS EchoDeviceCreate(PWDFDEVICE_INIT deviceInit);
 
 //
 // Device events
